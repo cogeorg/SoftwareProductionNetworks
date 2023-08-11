@@ -1,5 +1,4 @@
-
-#!/usr/bin/env python3
+#!/usr/local/bin/python3
 # -*- coding: utf-8 -*-
 
 __author__="""Co-Pierre Georg (co-pierre.georg@uct.ac.za)"""
@@ -38,35 +37,36 @@ def do_run(base_directory, input_directory, output_directory, identifier):
         print(versions.dtypes)
 
     for file_name in os.listdir(base_directory + input_directory):
-        merge_file_name = base_directory + input_directory + file_name
-        if True:
-            print("      << MERGING WITH: " + merge_file_name)
-        try:
-            dependencies = pd.read_csv(
-                                merge_file_name,
-                                skiprows=1,  # ignore header
-                                delimiter=";",
-                                names=["Project ID","Project Name","Version Number","Dependency Requirements","Dependency Project ID"],
-                                dtype = {
-                                    "Project ID": int,
-                                    "Project Name": str,
-                                    "Version Number": str,
-                                    "Dependency Requirements": str,
-                                    "Dependency Project ID": str
-                                }
-                            )
-            if False:
-                print(dependencies.dtypes)
-        except:
-            print("        << READ ERROR! " + file_name)
+        if ".DS_Store" not in file_name:
+            merge_file_name = base_directory + input_directory + file_name
+            if True:
+                print("      << MERGING WITH: " + merge_file_name)
+            try:
+                dependencies = pd.read_csv(
+                                    merge_file_name,
+                                    skiprows=1,  # ignore header
+                                    delimiter=";",
+                                    names=["Project ID","Project Name","Version Number","Dependency Requirements","Dependency Project ID"],
+                                    dtype = {
+                                        "Project ID": int,
+                                        "Project Name": str,
+                                        "Version Number": str,
+                                        "Dependency Requirements": str,
+                                        "Dependency Project ID": str
+                                    }
+                                )
+                if False:
+                    print(dependencies.dtypes)
+            except:
+                print("        << READ ERROR! " + file_name)
 
-        try:
-            merged = pd.merge(dependencies, versions, on=["Project ID", "Version Number"])
-            if False:
-                print(merged)
-            merged.to_csv(base_directory + output_directory + file_name)
-        except:
-            print("        << MERGE ERROR!", merged)
+            try:
+                merged = pd.merge(dependencies, versions, on=["Project ID", "Version Number"])
+                if False:
+                    print(merged)
+                merged.to_csv(base_directory + output_directory + file_name)
+            except:
+                print("        << MERGE ERROR!", merged)
 
     print("  >>> FILES WRITTEN TO:" + base_directory + output_directory)
     print(">>>>>> FINISHED")

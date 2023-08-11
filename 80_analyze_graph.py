@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/local/bin/python3
 # -*- coding: utf-8 -*-
 
 __author__="""Co-Pierre Georg (co-pierre.georg@uct.ac.za)"""
@@ -22,7 +22,7 @@ compute_centralities = True
 def do_run(base_directory, identifier):
     input_filename = base_directory + identifier + ".dat"
     output_filename = base_directory + "analysis_" + identifier + ".csv"
-    cent_filename = base_directory + "centrality-" + identifier + ".csv"
+    cent_filename = base_directory + "centrality_" + identifier + ".csv"
 
     print("<<<<<< WORKING ON: " + input_filename)
     
