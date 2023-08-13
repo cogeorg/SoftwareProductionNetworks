@@ -81,5 +81,7 @@ DEPFILE=dependencies_$BASENAME.csv
 #
 # PREPARE COVARIATES
 #
+# Note: Cargo_project_metadata.csv was created using a scraper of the libraries.io website.
+#
 ./50_prepare_covariates.py $BASEDIR/Cargo/covariates/ Cargo_project_metadata.csv covariates_maintainers-1.csv
-# python 51_prepare_covariates-contributors.py $BASEDIR/Cargo/covariates/ Contributor_commits.csv covariates-contributors-1.csv
+#./51_prepare_covariates-contributors.py $BASEDIR/Cargo/covariates/ Contributor_commits.csv covariates-contributors-1.csv
