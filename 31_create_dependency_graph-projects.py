@@ -172,100 +172,35 @@ def compare_versions(v1, versions, comp):
     return ret
 
 # -------------------------------------------------------------------------
-# find_matches(dependency)
-# -------------------------------------------------------------------------
-def find_matches(versions, from_id, from_version, dep_req, dep_id):
-    matches = []
-    
-    # dep_id = int(float(dep_id))
-
-    try:
-        # exact matches
-        if True:
-            if dep_req in versions[dep_id]:
-                # print(dep_req, dep_id, versions[dep_id])
-                matches.append(dep_req)
-            
-        # wildcard matches
-        if True: # Most packages seem to just use * for dependencies, creating a *lot* of edges. Hence, this part is optional
-            if dep_req == "x" or dep_req == "*":
-                for version in versions[dep_id]:
-                    matches.append(version)
-
-        # .x >= matches
-        if True:
-            if ".x" in dep_req:
-                # now go through all versions and append them to matches if they are a match
-                # 1.0.x means all versions with major 1 and minor 0
-                if ">=" in dep_req:
-                    dep_req = re.sub(r"x","999999999", dep_req)   # to ease comparison; do this here and for <= set to -1
-                    dep_req = re.sub(r"\*","999999999", dep_req)
-
-                    for match in compare_versions(dep_req.strip(), versions[dep_id], "geq"):
-                        matches.append(match)
-
-                # if "<" in dep_req:
-                #     dep_req = re.sub(r"x","-1", dep_req)   # to ease comparison;
-                #     dep_req = re.sub(r"\*","-1", dep_req)
-                #
-                #     compare_versions(dep_req.strip(), versions[dep_id], "lt")
-
-    except KeyError:
-        if False:  # error logging
-            print("   << KEY ERROR: " + str(dep_req))
-
-    return matches
-
-# -------------------------------------------------------------------------
 # do_run(file_name)
 # -------------------------------------------------------------------------
-def do_run(base_directory, input_file_name, output_identifier, version_file_name, sample_size):
+def do_run(base_directory, input_file_name, output_identifier, sample_size):
     line_count = 0
     error_count = 0
 
     G = nx.DiGraph()
     H = nx.DiGraph()
 
-    print(str(datetime.datetime.now()) + " <<<<<< START WORKING ON: " + base_directory + input_file_name + " USING VERSION FILE: " + base_directory + version_file_name + " AND SAMPLE SIZE: " + str(sample_size))
+    print(str(datetime.datetime.now()) + " <<<<<< START WORKING ON: " + base_directory + input_file_name + " AND SAMPLE SIZE: " + str(sample_size))
 
-    versions = read_version_file(base_directory + version_file_name)
-    
     with open(base_directory + input_file_name) as infile:
         for line in infile:
             line_count += 1
-            tokens = line.strip().split(",")
+            tokens = line.strip().split(";")
 
-            if len(tokens) == 7:
+            if len(tokens) == 2:
                 try:
-                    from_id = int(tokens[1])
-                except ValueError:
-                    print("  <<  VALUE ERROR:", tokens)
-    
-                from_version = tokens[3]
-
-                # if len(tokens) > 5:
-                try:
-                    if tokens[5] != "":
-                        to_id = int(float(tokens[5]))
-                        matches = find_matches(versions, from_id, from_version, tokens[4], to_id)
-                        if len(matches) > 0:
-                            from_node = str(from_id) + "-" + from_version
-                            for match in matches:
-                                to_node = str(to_id) + "-" + match
-                                G.add_edge(from_node, to_node)
-                                if sample_size != 0.0:
-                                    if random.random() < sample_size:
-                                        H.add_edge(from_node, to_node)
-                    else:
-                        error_count += 1
-                        # print("  << TOKEN ERROR:", len(tokens), tokens)
-                except IndexError:
-                    print("  << INDEX ERROR: ", len(tokens), tokens)
-            else:
-                print("    << WARNING TOKEN LENGTH:", len(tokens), tokens)
+                    from_id = int(tokens[0])
+                    to_id = int(tokens[1])
+                    G.add_edge(from_id, to_id)
+                    if sample_size != 0.0:
+                        if random.random() < sample_size:
+                            H.add_edge(from_id, to_id)
+                except ValueError:  # first row
+                    pass
 
     if True:  # debugging
-        print("    << " + str(datetime.datetime.now()) + " G: # Nodes: " + str(len(G.nodes())) + " # Edges: " + str(len(G.edges())) + " WITH: " + str(error_count) + " ERRORS.")
+        print("    << " + str(datetime.datetime.now()) + " G: # Nodes: " + str(len(G.nodes())) + " # Edges: " + str(len(G.edges())))
         if sample_size != 0.0:
             print("    << " + str(datetime.datetime.now()) + " H: # Nodes: " + str(len(H.nodes())) + " # Edges: " + str(len(H.edges())))
 
@@ -295,10 +230,9 @@ if __name__ == '__main__':
     base_directory = args[1]
     input_file_name = args[2]
     output_identifier = args[3]
-    version_file_name = args[4]
-    sample_size = float(args[5])
+    sample_size = float(args[4])
 
 #
 # CODE
 #
-    do_run(base_directory, input_file_name, output_identifier, version_file_name, sample_size)
+    do_run(base_directory, input_file_name, output_identifier, sample_size)

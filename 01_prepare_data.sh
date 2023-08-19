@@ -63,25 +63,23 @@ DEPFILE=dependencies_$BASENAME.csv
 
 # Note: for large networks, sampling might be helpful. The last number is the sampling probability.
 # ./30_create_dependency_graph.py $BASEDIR dependencies_npm-merged.csv dependencies_npm-merged versions_npm-restricted.csv 0.01 
-# ./32_create_largest_component.py $BASEDIR enc_sampled-0.01_dependencies_npm-merged
 
 # Note: 0.0 means no cuts applied
 # ./30_create_dependency_graph.py $BASEDIR/$BASENAME/ dependencies_$BASENAME-merged.csv dependencies_$BASENAME-merged versions_$BASENAME.csv 0.0
-# ./32_create_largest_component.py $BASEDIR/$BASENAME/ dependencies_$BASENAME-merged
+# ./31_create_dependency_graph-projects.py $BASEDIR/$BASENAME/ dependencies_$BASENAME-projects.csv dependencies_$BASENAME-projects  0.0
 
 
 #
 # ANALYZE GRAPH USING NETWORKX 
 #
 
-# ./80_analyze_graph.py \
-#   $BASEDIR/$BASENAME/ \
-#   dependencies_$BASENAME-merged
+# ./80_analyze_graph.py $BASEDIR/$BASENAME/ dependencies_$BASENAME-merged
+./80_analyze_graph.py $BASEDIR/$BASENAME/ dependencies_$BASENAME-projects
 
 #
 # PREPARE COVARIATES
 #
 # Note: Cargo_project_metadata.csv was created using a scraper of the libraries.io website.
 #
-./50_prepare_covariates.py $BASEDIR/Cargo/covariates/ Cargo_project_metadata.csv covariates_maintainers-1.csv
+# ./50_prepare_covariates.py $BASEDIR/Cargo/covariates/ Cargo_project_metadata.csv covariates_maintainers-1.csv
 #./51_prepare_covariates-contributors.py $BASEDIR/Cargo/covariates/ Contributor_commits.csv covariates-contributors-1.csv

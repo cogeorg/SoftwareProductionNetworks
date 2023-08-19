@@ -91,7 +91,9 @@ def do_run(base_directory, input_file_name, output_file_name):
     with open(base_directory + input_file_name, encoding="utf-8", errors='replace') as infile:
         for line in infile:
             _count += 1
-            tokens = line.strip().split(";")
+            tokens = line.strip().split(";")  # Note: .csv delimiter is usually "," so this has to be changed to ";" e.g. by exporting to tab first, then manually changing to ";"
+            if False:
+                print(len(tokens), tokens)
             if len(tokens) == 11:  # some entries have a ";" in the github url
                 try:
                     num_contributors = ensure_int(tokens[0])
