@@ -152,13 +152,27 @@ cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo/
 insheet using centrality_dependencies_Cargo-projects.csv, delimiter(";") clear
 	rename node key1
 	sort key1
-save 5_centralities_cargo-projects.dta, replace
-outsheet using 5_centralities_cargo-projects.csv, delimiter(";") replace
+save covariates/5_centralities_cargo-projects.dta, replace
+outsheet using covariates/5_centralities_cargo-projects.csv, delimiter(";") replace
 
+// do some analytics to see which packages are most central 
+merge 1:1 key1 using covariates/4_projects_cargo.dta 
+	keep if _merge == 3
+	drop _merge 
+	gsort - degree
+	
+	drop key1
+	order name_project
+	keep in 1/10
+	
+	texsave using covariates/5_centralities_list.tex, replace
+	
 
+	//
+// MAPPING 
 //
-// MAPPING
-//
+
+// PROJECT LEVEL
 cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo/covariates
 use 3_covariates_maintainers.dta, clear
 	keep name_project NumForks Popularity NumWatchers 
@@ -174,27 +188,27 @@ merge 1:1 key1 using ../5_centralities_cargo-projects.dta
 	
 	// simple scatter plot
 	scatter Popularity ev_centrality
-	graph export popularity-ev_centrality.jpg
+	graph export popularity-ev_centrality.jpg, replace
 	
 	scatter Popularity deg_centrality
-	graph export popularity-deg_centrality.jpg
+	graph export popularity-deg_centrality.jpg, replace
 
 	// binscatter
 	binscatter Popularity ev_centrality
-	graph export bs_popularity-ev_centrality.jpg
+	graph export bs_popularity-ev_centrality.jpg, replace
 	
 	binscatter Popularity deg_centrality
-	graph export bs_popularity-deg_centrality.jpg
+	graph export bs_popularity-deg_centrality.jpg, replace
 	
 	// regressions
 	regress Popularity ev_centrality
 	regress Popularity deg_centrality
 	
-save 10_popularity_centrality.dta, replace
+save ../10_popularity_centrality-projects.dta, replace
 
 
-
-
+// PROJECT.MAJOR.MINOR.VERSION LEVEL
+// TODO: double check why we have so few matches between centrality and popularity
 
 
 // ============================================================================

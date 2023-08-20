@@ -81,7 +81,7 @@ def do_run(base_directory, identifier):
 
         print(str(datetime.datetime.now()) + "    << FINISHED COMPUTING DEGREE DISTRIBUTIONS")
 
-    # assortativity
+    # ASSORTATIVITY
     if compute_assortativity:
         assort = nx.degree_assortativity_coefficient(G)
         assort_lcc = nx.degree_assortativity_coefficient(largest_cc)
@@ -150,9 +150,9 @@ def do_run(base_directory, identifier):
     
 
     if compute_centralities:
-        out_text = "node;ev_centrality;deg_centrality\n"
+        out_text = "node;ev_centrality;deg_centrality;degree\n"
         for node in degree_centrality.keys():
-            out_text += str(node) + ";" + str(eigenvector_centrality[node]) + ";" + str(degree_centrality[node]) + "\n"
+            out_text += str(node) + ";" + str(eigenvector_centrality[node]) + ";" + str(degree_centrality[node]) + ";" + str(G.degree(node)) + "\n"
         
         cent_file = open(cent_filename, "w")
         cent_file.write(out_text)
