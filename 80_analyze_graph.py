@@ -107,7 +107,7 @@ def do_run(base_directory, identifier):
 
         print(str(datetime.datetime.now()) + "    << FINISHED COMPUTING DEGREE CENTRALITY")
         
-        eigenvector_centrality = nx.eigenvector_centrality(largest_cc)
+        eigenvector_centrality = nx.katz_centrality(largest_cc)
         mean_eigenvector_centrality = 0.0
         for node in eigenvector_centrality.keys():
             mean_eigenvector_centrality += eigenvector_centrality[node]
