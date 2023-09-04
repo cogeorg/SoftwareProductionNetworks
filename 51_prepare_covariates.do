@@ -16,7 +16,6 @@ outsheet using "dependencies_Cargo-projects.csv", delimiter(";") replace
 // 1_maintainer_githubID.dta
 //
 cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo/covariates
-
 insheet using "Maintainer_GithubID.csv", delimiter(",") names clear 
 	rename project name_project
 save "1_maintainer_githubID.dta", replace
@@ -26,7 +25,6 @@ save "1_maintainer_githubID.dta", replace
 // 2_maintainer_github_metadata.dta
 //
 cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo/covariates
-
 insheet using "Maintainer_github_metadata.csv", delimiter(",") names clear 
 	rename contributor_github_url maintainer_github_url
 
@@ -55,7 +53,6 @@ outsheet using "2_maintainer_github_metadata.csv", delimiter(",") replace
 // 2_contributor_commits.dta
 //
 cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo/covariates
-
 insheet using "Contributor_commits-clean.csv", delimiter(";") names clear 
 	
 	drop if contributor_github_url == ""  // 5,476 observations lost
@@ -82,7 +79,6 @@ outsheet using "2_contributor_commits.csv", delimiter(",") replace
 // 3_covariates_maintainers.dta
 //
 cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo/covariates
-
 insheet using "covariates_maintainers-1.csv", delimiter(";") clear
 	drop v10
 	rename date_first_release str_date_first_release
@@ -107,14 +103,14 @@ duplicates drop
 	rename num_contributors NumContributors
 	rename size_repository Size  // in Byte
 	rename num_watchers NumWatchers 
-
+	rename num_total_releases NumReleases
+	
 outsheet using "3_covariates_maintainers.csv", delimiter(",") names replace
 save "3_covariates_maintainers.dta", replace
 
-// 	order name_project node_id key1 str_date_first_release str_date_latest_release date_first_release date_latest_release Maturity Activity Popularity NuMForks NumContributors Size NumWatchers
-
-
+//
 // 4_projects_cargo.dta -- to prepare mapping
+//
 cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo/
 insheet using "projects_Cargo.csv", delimiter(";") clear
 	rename projectid key1
@@ -148,43 +144,35 @@ save 5_centralities_cargo.dta, replace
 outsheet using 5_centralities_cargo.csv, delimiter(";") replace
 
 // based on dependency graph on project level
-cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo/
-insheet using centrality_dependencies_Cargo-projects.csv, delimiter(";") clear
+cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo/covariates
+insheet using ../centrality_dependencies_Cargo-projects.csv, delimiter(";") clear
 	rename node key1
 	sort key1
-save covariates/5_centralities_cargo-projects.dta, replace
-outsheet using covariates/5_centralities_cargo-projects.csv, delimiter(";") replace
-
-// do some analytics to see which packages are most central 
-merge 1:1 key1 using covariates/4_projects_cargo.dta 
-	keep if _merge == 3
-	drop _merge 
-	gsort - degree
-	
-	drop key1
-	order name_project
-	keep in 1/10
-	
-	texsave using covariates/5_centralities_list.tex, replace
+save 5_centralities_cargo-projects.dta, replace
+outsheet using 5_centralities_cargo-projects.csv, delimiter(";") replace
 	
 
-	//
+//
 // MAPPING 
 //
 
 // PROJECT LEVEL
 cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo/covariates
 use 3_covariates_maintainers.dta, clear
-	keep name_project NumForks Popularity NumWatchers 
+	keep name_project NumForks NumContributors NumReleases Size Popularity NumWatchers 
 
 merge 1:1 name_project using 4_projects_cargo.dta 
 	drop if _merge != 3
 	drop _merge
 	
-// merge 1:1 key1 using ../5_centralities_cargo.dta
-merge 1:1 key1 using ../5_centralities_cargo-projects.dta
+merge 1:1 key1 using 5_centralities_cargo-projects.dta
 	keep if _merge == 3
 	drop _merge 
+save ../10_popularity_centrality-projects.dta, replace
+
+	// truncate Popularity and centrality 
+	winsor2 ev_centrality, replace cuts(0 99) trim
+	winsor2 deg_centrality, replace cuts(0 99) trim
 	
 	// simple scatter plot
 	scatter Popularity ev_centrality
@@ -200,12 +188,103 @@ merge 1:1 key1 using ../5_centralities_cargo-projects.dta
 	binscatter Popularity deg_centrality
 	graph export bs_popularity-deg_centrality.jpg, replace
 	
+	// number of contributors vs popularity
+	winsor2 Popularity, replace cuts(1 99) trim
+	binscatter NumContributors Popularity
+	graph export bs_t99_numcontributors_popularity.jpg, replace
+	
+	binscatter NumContributors ev_centrality
+	graph export bs_t99_numcontributors_ev_centrality.jpg, replace
+	
 	// regressions
 	regress Popularity ev_centrality
 	regress Popularity deg_centrality
 	
-save ../10_popularity_centrality-projects.dta, replace
+	// 
+	// activity vs. popularity plots
+	//
+	drop if Size == 0  // some packages have zero size
+	gen top_pop = 0
+	replace top_pop = 1 if Popularity > 6030 // 159 changes, 99pct
+	
+	gen top_ev_cent = 0
+	replace top_ev_cent = 1 if ev_centrality > 0.0172589 // 171 changes, 99pct
+	
+	keep if top_ev_cent == 1 | top_pop == 1
+	gen foo = log(Size / (1024*1024))
+	drop Size
+	rename foo logSize // MB
+	
+	hist logSize if top_ev_cent == 1
+	hist logSize if top_pop == 1
+	
+	hist NumContributors if top_ev_cent == 1
+	hist NumContributors if top_pop == 1
+	
+	twoway (hist logSize if top_ev_cent == 1, start(-5) width(2) color(red%30)) ///
+		(hist logSize if top_pop == 1, start(-5) width(2) color(blue%30)), ///
+		legend(order(1 "Most Central" 2 "Most Popular"))
+	graph export hist_logSize_CentralPopular.jpg, replace
+		
+	twoway (hist NumContributors if top_ev_cent == 1, start(0) width(125) color(red%30)) ///
+		(hist  NumContributors if top_pop == 1, start(0) width(125) color(blue%30)), ///
+		legend(order(1 "Most Central" 2 "Most Popular"))
+	graph export hist_NumContributors_CentralPopular.jpg, replace
+		
+	twoway (hist NumReleases if top_ev_cent == 1, start(0) width(75) color(red%30)) ///
+		(hist   NumReleases if top_pop == 1, start(0) width(75) color(blue%30)), ///
+		legend(order(1 "Most Central" 2 "Most Popular"))
+	graph export hist_NumReleases_CentralPopular.jpg, replace
 
+save ../11_top_popularity_centrality-projects.dta, replace
+
+
+// summary stats of most central and most popular packages
+cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo/covariates
+use ../10_popularity_centrality-projects.dta, clear
+
+	// table for most central projects
+	gsort - degree
+
+	order name_project degree ev_centrality deg_centrality Popularity Size NumContributors NumReleases
+	keep name_project degree ev_centrality deg_centrality Popularity Size NumContributors NumReleases
+	keep in 1/10
+	
+	texsave using 5_centralities_list.tex, replace
+	
+cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo/covariates
+use ../10_popularity_centrality-projects.dta, clear
+	// table for most popular projects
+	gsort - Popularity
+	drop if Size == 978321408 // drop rust language repositories
+	drop if Size == 4383047
+	
+	order name_project degree ev_centrality deg_centrality Popularity Size NumContributors NumReleases
+	keep name_project degree ev_centrality deg_centrality Popularity Size NumContributors NumReleases
+	keep in 1/10
+	
+	texsave using 5_popularity_list.tex, replace
+
+	
+	
+	
+	
+// cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo/covariates
+// // prepare maintainer data
+// use 2_maintainer_github_metadata-full.dta, clear
+// 	bysort maintainer_github_url: egen total_contributions = sum(contributions)
+// 	drop if total_contributions > 125000 // there seem to be a handful of either malicious or automated accounts that we are dropping here
+//
+// 	keep maintainer_github_url total_contributions
+// 	duplicates drop
+// save 2_maintainer_github_metadata-full-total.dta, replace
+//
+// // prepare mapping
+// insheet using Maintainer_GithubID.csv, delimiter(",") clear names
+//
+// merge m:1 maintainer_github_url using 2_maintainer_github_metadata-full-total.dta
+// 	keep if _merge == 3
+// 	drop _merge
 
 // PROJECT.MAJOR.MINOR.VERSION LEVEL
 // TODO: double check why we have so few matches between centrality and popularity
