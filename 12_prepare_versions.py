@@ -48,7 +48,10 @@ def do_run(base_directory, input_file_name, output_file_name, start_date, end_da
                 # for this, convert src_date_time
                 src_date_time = tokens[5]  # 5 = Published Timestamp ; 6 = Created Timestamp; 7 = Updated Timestamp
                 src_date_time = src_date_time.replace(" UTC","").strip()
-                date_time_obj = datetime.datetime.strptime(src_date_time, "%Y-%m-%d %H:%M:%S")
+                try:
+                    date_time_obj = datetime.datetime.strptime(src_date_time, "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    print("   << ERROR: ", tokens)
                 if date_time_obj.date() <= end_datetime_obj.date() and date_time_obj.date() >= start_datetime_obj.date():
                     # then write text
                     try:

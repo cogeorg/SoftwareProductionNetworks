@@ -1,3 +1,9 @@
+// ============================================================================
+//
+// Cargo
+//
+// ============================================================================
+
 //
 // PRELIMINARY ANALYSES
 //
@@ -383,6 +389,7 @@ save ../tmp_10_popularity_centrality-projects.dta, replace
 // CENTRALTIES
 //
 // KATZ CENTRALITY VS. POPULARITY
+cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo/covariates
 use ../tmp_10_popularity_centrality-projects.dta, clear
 	
 	keep if top_katz_cent == 1 | top_pop == 1. // 331 obs left
@@ -413,6 +420,7 @@ use ../tmp_10_popularity_centrality-projects.dta, clear
 save ../11_top_popularity_centrality-projects-1.dta, replace
 
 // TOP VS. BOTTOM KATZ CENTRALITY
+cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo/covariates
 use ../tmp_10_popularity_centrality-projects.dta, clear
 	
 	keep if top_katz_cent == 1 | bot_katz == 1
@@ -442,7 +450,39 @@ use ../tmp_10_popularity_centrality-projects.dta, clear
 	graph export hist_NumReleases_TopLeast_Central.jpg, replace 
 save ../11_top_popularity_centrality-projects-2.dta, replace
 
+// TOP VS. BOTTOM POPULARITY
+cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo/covariates
+use ../tmp_10_popularity_centrality-projects.dta, clear
+	
+	keep if top_pop == 1 | bot_pop == 1
+	gen foo = log(Size / (1024*1024))
+	drop Size
+	rename foo logSize // MB
+	
+	hist logSize if top_pop == 1
+	hist logSize if bot_pop == 1
+	
+	hist NumContributors if top_pop == 1
+	hist NumContributors if bot_pop == 1
+	
+	twoway (hist logSize if top_pop == 1, start(-8) width(2) color(red%30)) ///
+		(hist logSize if bot_pop == 1, start(-8) width(2) color(blue%30)), ///
+		legend(order(1 "Log(Size) Most Popular" 2 "Log(Size) Least Popular"))
+	graph export hist_logSize_TopLeast_Popularity.jpg, replace
+		
+	twoway (hist NumContributors if top_pop == 1, start(0) width(100) color(red%30)) ///
+		(hist  NumContributors if bot_pop == 1, start(0) width(100) color(blue%30)), ///
+		legend(order(1 "NumContrib Most Popular" 2 "NumContrib Least Popular"))
+	graph export hist_NumContributors_TopLeast_Popularity.jpg, replace
+		
+	twoway (hist NumReleases if top_pop == 1, start(0) width(10) color(red%30)) ///
+		(hist   NumReleases if bot_pop == 1, start(0) width(10) color(blue%30)), ///
+		legend(order(1 "NumReleases Most Popular" 2 "NumReleases Least Popular"))
+	graph export hist_NumReleases_TopLeast_Popular.jpg, replace 
+save ../11_top_popularity_centrality-projects-3.dta, replace
+
 // INDEGREE CENTRALITY VS. POPULARITY
+cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo/covariates
 use ../tmp_10_popularity_centrality-projects.dta, clear	
 	keep if top_indeg_cent == 1 | top_pop == 1. // 331 obs left
 	gen foo = log(Size / (1024*1024))
@@ -469,7 +509,7 @@ use ../tmp_10_popularity_centrality-projects.dta, clear
 		(hist   NumReleases if top_pop == 1, start(0) width(10) color(blue%30)), ///
 		legend(order(1 "Most Central" 2 "Most Popular"))
 	graph export hist_NumReleases_IndegCentralPopular.jpg, replace
-save ../11_top_popularity_centrality-projects-3.dta, replace
+save ../11_top_popularity_centrality-projects-4.dta, replace
 
 
 //
@@ -477,19 +517,130 @@ save ../11_top_popularity_centrality-projects-3.dta, replace
 //
 cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo
 use tmp_10_popularity_centrality-projects.dta, clear
-	gen foo = Size / (1024*1024)
-
+// 	gen foo = log(Size / (1024*1024))
+// 	drop Size
+// 	rename foo logSize // MB
+	gen foo = Size/(1024*1024)
+	drop Size
+	rename foo Size
+	
 // 	winsor2 Size, replace cuts(0,90) trim
 // 	winsor2 TotalCommits, replace cuts(0,90) trim
 // 	winsor2 NumContributors, replace cuts(0,90) trim. // TODO: careful
-	drop if TotalCommits > 1000000.  // all of these are somewhat suspicious repositories
+	drop if TotalCommits > 1000000  // all of these are somewhat suspicious repositories
 	drop if NumContributors > 150
-	drop if Size > 100000000
+	drop if Size > 38.3  // p99
 	
 	scatter NumContributors Size
-	scatter TotalCommits Size
-	scatter TotalCommits NumContributors
+	graph export NumContrib_Size.jpg, replace
 	
+	scatter TotalCommits Size
+	graph export TotalCommits_Size.jpg, replace
+	
+	scatter TotalCommits NumContributors
+	graph export TotalCommits_NumContributors.jpg, replace
+
+	gen Binned_NumContrib = round(NumContributors/10,1)
+	gen AvgNumCommits = TotalCommits / NumContributors
+	bysort Binned_NumContrib: egen AvgCommits = mean(AvgNumCommits)
+	keep Binned_NumContrib AvgCommits
+	duplicates drop
+	
+	line AvgCommits Binned_NumContrib
+	graph export AvgCommits_BinnedNumContrib.jpg, replace
+	
+
+// ============================================================================
+//
+// Pypi
+//
+// ============================================================================
+
+//
+// PRELIMINARY ANALYSES
+//
+cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Pypi/
+insheet using "dependencies_Pypi.csv", delimiter(";") names clear
+	rename projectid id_from
+	rename dependencyprojectid id_to
+	keep id*
+duplicates drop
+	drop if id_from == "Project ID"
+	destring id*, replace
+outsheet using "dependencies_Pypi-projects.csv", delimiter(";") replace
+
+
+//
+// 1_maintainer_githubID.dta
+//
+cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Pypi/covariates
+insheet using "Maintainer_GithubID.csv", delimiter(",") names clear 
+	rename project name_project
+save "1_maintainer_githubID.dta", replace
+
+
+//
+// 2_maintainer_github_metadata.dta
+//
+cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo/covariates
+insheet using "Maintainer_github_metadata.csv", delimiter(",") names clear 
+	rename contributor_github_url maintainer_github_url
+
+	// data not filled for 2/3 of the maintainers
+	gen pct_code_review = round(100*code_review / contributions)
+	gen pct_commits = round(100*commits / contributions)
+	gen pct_issues = round(100*issues / contributions)
+	gen pct_pull_requests = round(100*pull_requests / contributions)
+	
+save "2_maintainer_github_metadata-full.dta", replace
+outsheet using "2_maintainer_github_metadata-full.csv", delimiter(",") replace
+
+	sort maintainer_github_url year
+	bysort maintainer_github_url: gen MaintainerSeniority = _N
+	bysort maintainer_github_url: egen MaintainerActivity = sum(contributions)
+	gen MaintainerAvgActivity = MaintainerActivity / MaintainerSeniority
+
+	keep maintainer_github_url Maintainer*
+	duplicates drop
+	
+save "2_maintainer_github_metadata.dta", replace
+outsheet using "2_maintainer_github_metadata.csv", delimiter(",") replace
+ 
+
+//
+// 2_contributor_commits.dta
+//
+cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo/covariates
+insheet using "Contributor_commits-clean.csv", delimiter(";") names clear 
+	
+	drop if contributor_github_url == ""  // 5,476 observations lost
+	sort name_project contributor_github_url
+	
+save "2_contributor_commits-full.dta", replace
+outsheet using "2_contributor_commits-full.csv", delimiter(",") replace
+
+	bysort name_project: gen num_contributors_alt = _N
+
+	bysort contributor_github_url: gen ContributorExperience = _N
+	bysort contributor_github_url: egen ContributorTotalCommits = sum(contributor_commits)
+	gen ContributorActivty = ContributorExperience / ContributorTotalCommits
+
+	keep name_project contributor_github_url Contributor*
+	
+	duplicates drop
+	
+save "2_contributor_commits.dta", replace
+outsheet using "2_contributor_commits.csv", delimiter(",") replace
+	bysort name_project: egen TotalContributorCommits = sum(ContributorTotalCommits)
+	keep name_project TotalContributorCommits
+	duplicates drop 
+save 12_contributors_project.dta, replace
+	
+	
+	
+	
+	
+
 // ==============================================================================
 //
 // NOT USED
