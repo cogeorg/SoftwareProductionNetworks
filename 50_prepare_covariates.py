@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 __author__="""Co-Pierre Georg (co-pierre.georg@uct.ac.za)"""
@@ -81,7 +81,7 @@ def do_run(base_directory, input_file_name, output_file_name):
     _errors = 0
     _count = 0
 
-    out_text = "name_project;date_first_release;date_latest_release;num_total_releases;size_repository;num_contributors;num_forks;num_stars;num_watchers;"
+    out_text = "name_project;date_first_release;date_latest_release;num_total_releases;size_repository;num_contributors;num_forks;num_stars;num_watchers;crates_url;github_repo"
     out_text += "\n"
 
     out_file = open(base_directory + output_file_name, 'w')
@@ -91,9 +91,7 @@ def do_run(base_directory, input_file_name, output_file_name):
     with open(base_directory + input_file_name, encoding="utf-8", errors='replace') as infile:
         for line in infile:
             _count += 1
-            tokens = line.strip().split(";")  # Note: .csv delimiter is usually "," so this has to be changed to ";" e.g. by exporting to tab first, then manually changing to ";"
-            if False:
-                print(len(tokens), tokens)
+            tokens = line.strip().split(";")
             if len(tokens) == 11:  # some entries have a ";" in the github url
                 try:
                     num_contributors = ensure_int(tokens[0])
@@ -102,14 +100,16 @@ def do_run(base_directory, input_file_name, output_file_name):
                     num_forks = ensure_int(tokens[2])
                     num_stars = ensure_int(tokens[4])
                     num_watchers = ensure_int(tokens[5])
+                    crates_url = tokens[6]
+                    github_repo = tokens[7]
                     name_project = tokens[8]
                     size_repository = ensure_byte(tokens[9])
                     num_total_releases = ensure_int(tokens[10])
                     
                     if date_first_release != "":  # some packages have no data
                         out_text += name_project + ";" + str(date_first_release)[:10] +";"+ str(date_latest_release)[:10] +";"
-                        out_text += str(num_total_releases) +";"+ str(size_repository) +";"+ str(num_contributors) +";"+ str(num_forks) +";"+ str(num_stars) +";"+ str(num_watchers) +";"
-                        # out_text += str(num_watchers)
+                        out_text += str(num_total_releases) +";"+ str(size_repository) +";"+ str(num_contributors) +";"+ str(num_forks) +";"+ str(num_stars) +";"+ str(num_watchers) + ";"
+                        out_text += str(crates_url) + ";" + github_repo
                         out_text += "\n"
 
                 # for heading and other mistakes

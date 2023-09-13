@@ -9,9 +9,9 @@ import random
 
 import networkx as nx
 
-compute_deg_dist = False
-compute_assortativity = False
-compute_clustering = False
+compute_deg_dist = True
+compute_assortativity = True
+compute_clustering = True
 compute_centralities = True
 
 # ###########################################################################
@@ -44,7 +44,7 @@ def do_run(base_directory, identifier):
     largest_cc = G.subgraph(max(nx.connected_components(G), key=len))
     size_largest_cc = len(largest_cc)
     nx.write_gexf(largest_cc, base_directory + identifier + "-lcc.gexf")
-    print(str(datetime.datetime.now()) + "    << LARGEST CC HAS # NODES: " + str(size_largest_cc))
+    print(str(datetime.datetime.now()) + "    << LARGEST WCC HAS # NODES: " + str(size_largest_cc))
 
     if compute_deg_dist:
         # degree (distributions)
@@ -107,7 +107,7 @@ def do_run(base_directory, identifier):
 
         print(str(datetime.datetime.now()) + "    << FINISHED COMPUTING DEGREE CENTRALITY")
         
-        eigenvector_centrality = nx.katz_centrality(largest_cc)
+        eigenvector_centrality = nx.eigenvector_centrality(largest_cc)
         mean_eigenvector_centrality = 0.0
         for node in eigenvector_centrality.keys():
             mean_eigenvector_centrality += eigenvector_centrality[node]

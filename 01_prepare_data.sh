@@ -1,7 +1,8 @@
-#!/bin/bash
-GITDIR=~/Git/SoftwareProductionNetworks/
-BASENAME=Cargo
+#!/usr/bin/env bash
 BASEDIR=~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/
+GITDIR=~/Git/SoftwareProductionNetworks/
+
+BASENAME=Cargo
 DEPFILE=dependencies_$BASENAME.csv
 
 # ###########################################################################
@@ -58,7 +59,7 @@ DEPFILE=dependencies_$BASENAME.csv
 
 
 #
-# CREATE DEPENDENCY GRAPH
+# CREATE VERSION-DEPENDENCY GRAPH
 #
 
 # Note: for large networks, sampling might be helpful. The last number is the sampling probability.
@@ -70,16 +71,20 @@ DEPFILE=dependencies_$BASENAME.csv
 
 
 #
-# ANALYZE GRAPH USING NETWORKX 
+# PREPARE COVARIATES
+#
+# NOTES: 
+# 1. Cargo_project_metadata.csv was created using a scraper of the libraries.io website.
+# 2. 50_prepare_covariates.py generates files necessary for repo-dependency graph
+#
+# python3 50_prepare_covariates.py $BASEDIR/Cargo/covariates/ Cargo_project_metadata.csv covariates_maintainers-1.csv
+#./51_prepare_covariates-contributors.py $BASEDIR/Cargo/covariates/ Contributor_commits.csv covariates-contributors-1.csv
+
+
+#
+# ANALYZE VERSION / PROJECT / REPO DEPENDENCY GRAPH USING NETWORKX 
 #
 
 # ./80_analyze_graph.py $BASEDIR/$BASENAME/ dependencies_$BASENAME-merged
-./80_analyze_graph.py $BASEDIR/$BASENAME/ dependencies_$BASENAME-projects
-
-#
-# PREPARE COVARIATES
-#
-# Note: Cargo_project_metadata.csv was created using a scraper of the libraries.io website.
-#
-# ./50_prepare_covariates.py $BASEDIR/Cargo/covariates/ Cargo_project_metadata.csv covariates_maintainers-1.csv
-#./51_prepare_covariates-contributors.py $BASEDIR/Cargo/covariates/ Contributor_commits.csv covariates-contributors-1.csv
+# ./80_analyze_graph.py $BASEDIR/$BASENAME/ dependencies_$BASENAME-projects
+# ./81_analyze_graph.py $BASEDIR/$BASENAME/ dependencies_$BASENAME-repo-nomissing

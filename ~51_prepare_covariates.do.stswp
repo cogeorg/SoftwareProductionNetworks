@@ -479,7 +479,7 @@ cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo
 use tmp_10_popularity_centrality-projects.dta, clear
 	gen foo = Size / (1024*1024)
 
-// 	winsor2 Size, replace cuts(0,90) trim
+	// 	winsor2 Size, replace cuts(0,90) trim
 // 	winsor2 TotalCommits, replace cuts(0,90) trim
 // 	winsor2 NumContributors, replace cuts(0,90) trim. // TODO: careful
 	drop if TotalCommits > 1000000.  // all of these are somewhat suspicious repositories
