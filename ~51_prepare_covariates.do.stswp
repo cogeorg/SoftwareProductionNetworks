@@ -1267,7 +1267,8 @@ use tmp_10_popularity_centrality-projects.dta, clear
 	
 	line AvgCommits Binned_NumContrib
 	graph export AvgCommits_BinnedNumContrib.jpg, replace
-		
+	
+	
 	
 
 // ==============================================================================

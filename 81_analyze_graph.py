@@ -18,22 +18,25 @@ import networkx as nx
 # do_run(file_name)
 # -------------------------------------------------------------------------
 def do_run(base_directory, identifier):
-    input_filename = base_directory + identifier + ".dat"
+    input_filename = base_directory + identifier + ".gexf"
     output_filename = base_directory + "analysis_" + identifier + ".csv"
 
     print("<<<<<< WORKING ON: " + input_filename)
     
-    G = nx.read_edgelist(input_filename, create_using=nx.DiGraph())  # this is an undirected graph
-    nx.write_gexf(G, base_directory + identifier + ".gexf")
-    
+    G = nx.read_gexf(input_filename)  # this is an undirected graph and had to be manually changed to directed
+    # print(nx.adjacency_spectrum(G))
+
     # nodes, edges
     num_nodes = G.number_of_nodes()
     num_edges = G.number_of_edges()
+    
     print(str(datetime.datetime.now()) + "    << # NODES: " + str(num_nodes) + " # EDGES: " + str(num_edges))
+    if nx.is_directed_acyclic_graph(G):
+        print("    << WARNING: GRAPH IS A DAG")
 
     out_text = "id_node;in_degree;out_degree;katz_centrality;ev_centrality;indeg_centrality\n"
-    katz_centralities = nx.katz_centrality(G, max_iter=2000, tol=1e-06)
-    ev_centralities = nx.eigenvector_centrality(G, max_iter=2000, tol=1e-06)
+    katz_centralities = nx.katz_centrality(G, max_iter=1000, tol=1e-06) # 
+    ev_centralities = nx.eigenvector_centrality(G, max_iter=1000, tol=1e-06)
     indeg_centralities = nx.in_degree_centrality(G)
 
     for node in G.nodes():

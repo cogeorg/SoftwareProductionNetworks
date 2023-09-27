@@ -9,10 +9,10 @@ import random
 
 import networkx as nx
 
-compute_deg_dist = True
-compute_assortativity = True
-compute_clustering = True
-compute_centralities = True
+compute_deg_dist = False
+compute_assortativity = False
+compute_clustering = False
+compute_centralities = False
 
 # ###########################################################################
 # METHODS
@@ -22,16 +22,13 @@ compute_centralities = True
 # do_run(file_name)
 # -------------------------------------------------------------------------
 def do_run(base_directory, identifier):
-    input_filename = base_directory + identifier + ".dat"
+    input_filename = base_directory + identifier + ".gexf"
     output_filename = base_directory + "analysis_" + identifier + ".csv"
     cent_filename = base_directory + "centrality_" + identifier + ".csv"
 
     print("<<<<<< WORKING ON: " + input_filename)
     
-    print(str(datetime.datetime.now()) + "  << START READING .dat FILE")
-    G = nx.read_edgelist(input_filename)  # this is an undirected graph
-    print(str(datetime.datetime.now()) + "  >> COMPLETE READING .dat FILE")
-    nx.write_gexf(G, base_directory + identifier + ".gexf")
+    G = nx.read_gexf(input_filename)  # this is an undirected graph
     
     # nodes, edges
     num_nodes = G.number_of_nodes()
