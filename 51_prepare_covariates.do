@@ -103,7 +103,7 @@ merge 1:1 repoid using analysis_dependencies_Cargo-repo2-lcc.dta
 	
 	drop if Size == 0  // some packages have zero size
 	rename numstars Popularity
-
+	label var ev_centrality "Eigenvector Centrality"
 	// truncate
 // 	winsor2 ev_centrality, replace cuts(0 95) trim
 // 	winsor2 katz_centrality, replace cuts(0 95) trim
@@ -332,6 +332,36 @@ use tmp_10_popularity_centrality-repo.dta, clear
 
 
 
+//
+// CREATE PROPER IDs FOR EQUILIBRIUM COMPUTATION
+// 
+cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo-1.6.0/Master/
+
+// create list of consecutive and unique ids
+insheet using "sampled-0.01_dependencies_Cargo-repo2-matched-lcc.edgelist", delimiter(" ") clear
+	drop v3
+	rename v1 repo_name
+	drop v2 
+save "tmp.dta", replace
+insheet using "sampled-0.01_dependencies_Cargo-repo2-matched-lcc.edgelist", delimiter(" ") clear
+	drop v3
+	drop v1
+	rename v2 repo_name
+append using tmp.dta
+	duplicates drop
+	sort repo_name
+	gen id_sample = _n
+outsheet using "sampled_ids.csv", delimiter(";") replace
+save "sampled_ids.dta", replace
+
+// now create sampled covariate data 
+insheet using "20_master_Cargo-matched.csv", delimiter(";") clear
+	merge 1:1 repo_name using sampled_ids.dta
+	keep if _merge == 3
+	drop _merge
+	order id_sample 
+	drop id_repo
+outsheet using "sampled-0.01_20_master_Cargo-matched.csv", delimiter(";") replace	
 
 
 
