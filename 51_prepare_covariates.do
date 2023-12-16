@@ -8,7 +8,7 @@
 //
 // PREPARE FILES
 //
-// cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo/
+cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareProductionNetworks/Data/Cargo/
 
 // repositories
 cd ~/Downloads/Cargo/
@@ -364,7 +364,116 @@ insheet using "20_master_Cargo-matched.csv", delimiter(";") clear
 outsheet using "sampled-0.01_20_master_Cargo-matched.csv", delimiter(";") replace	
 
 
+//
+// analysis and transformation of popularity
+//
+// restrict popularity within reasonable bounds
+insheet using "20_master_Cargo-matched.csv", delimiter(";") clear
+	winsor2 popularity, replace cuts(0,99) trim
+	replace popularity = . if popularity == 0
+	
+	drop if popularity == .
+	keep repo_name
+	sort repo_name
+	gen id_sample = _n
+save sampled_ids.dta, replace
+outsheet using sampled_ids.csv, delimiter(";") replace
 
+// apply cuts
+insheet using "20_master_Cargo-matched.csv", delimiter(";") clear
+	merge 1:1 repo_name using sampled_ids.dta
+	keep if _merge == 3
+	drop _merge 
+	order id_sample
+	drop id_repo
+outsheet using 20_master_Cargo-matched-cut.csv, delimiter(";") replace
+save 20_master_Cargo-matched-cut.dta, replace
+
+// now prune the network and restrict to only repositories within above bounds for popularity
+insheet using "dependencies_Cargo-repo2-matched-lcc.csv", delimiter(" ") clear
+	drop v3 v4
+	
+	rename v1 repo_name 
+	merge m:1 repo_name using sampled_ids.dta
+	keep if _merge == 3
+	drop _merge 
+	rename id_sample v1 
+	drop repo_name
+	
+	rename v2 repo_name 
+	merge m:1 repo_name using sampled_ids.dta
+	keep if _merge == 3
+	drop _merge 
+	rename id_sample v2 
+	drop repo_name
+
+	sort v1 v2 
+outsheet using "dependencies_Cargo-repo2-matched-lcc-cut.edgelist", delimiter(" ") replace nonames
+
+// some repositories are dropped because their only links are to repos that have been cut before
+insheet using "dependencies_Cargo-repo2-matched-lcc-cut.edgelist", delimiter(" ") clear 
+	keep v1 
+	duplicates drop
+save "tmp.dta", replace
+
+insheet using "dependencies_Cargo-repo2-matched-lcc-cut.edgelist", delimiter(" ") clear 
+	drop v1 
+	rename v2 v1
+append using "tmp.dta"
+	duplicates drop
+	sort v1
+rename v1 repo_name
+	gen id_sample = _n
+save "ids_existing_repo.dta", replace
+
+// now merge again as before
+insheet using "dependencies_Cargo-repo2-matched-lcc-cut.edgelist", delimiter(" ") clear 
+	rename v1 repo_name 
+merge m:1 repo_name using ids_existing_repo.dta
+	keep if _merge == 3
+	drop _merge 
+	rename repo_name v1
+	drop id_sample 
+	
+	rename v2 repo_name 
+merge m:1 repo_name using ids_existing_repo.dta
+	keep if _merge == 3
+	drop _merge 
+	rename repo_name v2
+	drop id_sample 
+
+	sort v1 v2
+outsheet using "dependencies_Cargo-repo2-matched-lcc-cut2.edgelist", delimiter(" ") replace nonames
+
+use 20_master_Cargo-matched-cut.dta, clear
+	drop repo_name // old repo name
+	rename id_sample repo_name // we match on this, a bit messy, but makes sense
+merge 1:1 repo_name using ids_existing_repo.dta
+	keep if _merge == 3
+	drop _merge
+	order id_sample 
+	drop repo_name  // popularity must be column 4
+	
+	// below is optional if transformed popularity distribution based on deciles is used
+	egen dec_pop = cut(popularity), group(10)
+	order id_sample projectname size dec_pop 
+	
+save 20_master_Cargo-matched-cut2.dta, replace
+outsheet using 20_master_Cargo-matched-cut2.csv, delimiter(";") replace 
+
+
+//
+// analyze q,p
+//
+insheet using equilibria_dependencies_Cargo-repo2-matched-lcc-cut2.csv, delimiter(" ") clear
+	rename v1 q_eq
+	rename v2 p_eq 
+	rename v3 q_so 
+	rename v4 p_so
+
+	gen d_p = (p_so - p_eq) / p_so
+	gen d_q = (q_so - q_eq) / q_eq 
+	
 // ============================================================================
 //
 // Pypi -- 1.6.0

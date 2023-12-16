@@ -28,8 +28,19 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta):
     print(str(datetime.datetime.now()) + "  DEPENDENCIES: " + dependency_identifier)
     print(str(datetime.datetime.now()) + "  COVARIATES: " + covariate_identifier)
     
-    G = nx.read_edgelist(edge_filename, create_using=nx.DiGraph())
-    # print(nx.adjacency_spectrum(G))
+    # TO USE THE NETWORK STORED IN THE EDGE_FILENAME, USE THE BELOW:
+    # G = nx.read_edgelist(edge_filename, create_using=nx.DiGraph())
+
+    # OTHERWISE, USE UNTIL >>> TO MANUALLY ADD EDGES TO AN EMPTY GRAPH
+    # <<<
+    G = nx.create_empty_copy(
+        nx.read_edgelist(edge_filename, create_using=nx.DiGraph())                     
+                             )
+    print(G.nodes())
+    G.add_edges_from([('0','1')])
+    G.add_edges_from([('1','2')])
+    # G.add_edges_from([('0','2')])
+    # >>>
 
     # nodes, edges
     num_nodes = G.number_of_nodes()
@@ -47,15 +58,15 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta):
 
     inv_mat = np.linalg.inv(I - delta*Gm)
 
-    if False:
+    if True:
         print(Gm, theta)
-
+        print(inv_mat)
     #
     # EQUILIBRIUM CASE
     #
     # COMPUTE EQUILIBRIUM
-    q_eq = One - theta
-    p_eq = inv_mat @ (One - theta)
+    q_eq = One - theta  # checked and correct
+    p_eq = inv_mat @ (One - theta)  # checked and correct
     print(str(datetime.datetime.now()) + " << FINISHED EQUILIBRIUM COMPUTATION")
 
     # COMPUTE WELFARE
@@ -66,8 +77,8 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta):
     # SOCIAL OPTIMUM CASE 
     #
     # COMPUTE SOCIAL OPTIMUM
-    q_so = One - (inv_mat @ theta)
-    p_so = inv_mat @ (One - np.linalg.inv(I - delta*np.transpose(Gm)) @ theta )
+    q_so = One - (inv_mat @ theta) # checked and correct
+    p_so = inv_mat @ (One - np.linalg.inv(I - delta*np.transpose(Gm)) @ theta )  # checked and correct
     print(str(datetime.datetime.now()) + " << FINISHED SOCIAL OPTIMUM COMPUTATION")
 
     # COMPUTE WELFARE
@@ -78,10 +89,12 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta):
     # WRITE OUT TEXT
     #
     out_file = open(output_filename, "w")
-    out_text = ""
-    text_lines = [f"{qeq_i} {peq_i} {qso_i} {pso_i}" for qeq_i, peq_i, qso_i, pso_i in zip(q_eq, p_eq, q_so, p_so)]
-    out_text = "\n".join(text_lines)
+    out_text = "i q_eq p_eq q_so p_so\n"
 
+    for i in range(0,num_nodes):
+        out_text += str(i) + " " +str(q_eq[i]) + " " + str(p_eq[i]) + " " + str(q_so[i]) + " " + str(p_so[i]) + "\n"
+    
+    print(out_text)
     out_file.write(out_text)
     out_file.close()
     print("  >> FILE WRITTEN TO:" + output_filename)

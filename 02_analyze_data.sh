@@ -21,4 +21,6 @@ DEPFILE=dependencies_$BASENAME.csv
 #
 # STEP 2 -- COMPUTE EQUILIBRIA
 #
-./90_compute_equilibrium.py $BASEDIR/$BASENAME/Master/ sampled-0.01_dependencies_Cargo-repo2-matched-lcc sampled-0.01_20_master_Cargo-matched 0.5
+./90_compute_equilibrium.py $BASEDIR/$BASENAME/Master/ test2 test2 0.1
+# ./90_compute_equilibrium.py $BASEDIR/$BASENAME/Master/ sampled-0.01_dependencies_Cargo-repo2-matched-lcc sampled-0.01_20_master_Cargo-matched 0.1
+# ./90_compute_equilibrium.py $BASEDIR/$BASENAME/Master/ dependencies_Cargo-repo2-matched-lcc-cut2 20_master_Cargo-matched-cut2 0.1
