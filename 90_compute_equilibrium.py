@@ -47,6 +47,7 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
     num_edges = G.number_of_edges()
     
     print(str(datetime.datetime.now()) + "  DELTA: " + str(delta))
+    print(str(datetime.datetime.now()) + "  COL_NUM: " + str(col_num))
     print(str(datetime.datetime.now()) + "  # NODES: " + str(num_nodes) + " # EDGES: " + str(num_edges))
 
     # CREATE DATA
@@ -60,48 +61,62 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
     One = np.ones(num_nodes)
 
     inv_mat = np.linalg.inv(I - delta*Gm)
+    inv_mat_trans = np.linalg.inv(I - delta*np.transpose(Gm))
 
     if False:
-        print(Gm, theta)
-        print(inv_mat)
+        print("Gm = \n", Gm)
+        print("theta = ", theta)
+        print("inv_mat = \n", inv_mat)
+        print("inv_mat_trans = \n", inv_mat_trans)
     #
     # EQUILIBRIUM CASE
     #
     # COMPUTE EQUILIBRIUM
-    q_eq = One - theta  # checked and correct
-    p_eq = inv_mat @ (One - theta)  # checked and correct
+    # q_eq = One - theta  # checked and correct
+    # p_eq = inv_mat @ q_eq  # checked and correct
+    q_eq = One / np.sqrt(theta)
+    p_eq = inv_mat @ q_eq
     print(str(datetime.datetime.now()) + " << FINISHED EQUILIBRIUM COMPUTATION")
 
-    # COMPUTE WELFARE
-    W_eq = theta @ (One - p_eq) - 0.5*(One - q_eq) @ (One - q_eq)
-    print(str(datetime.datetime.now()) + "   W_eq =", W_eq)
+    # COMPUTE TOTAL COST
+    TCD_eq = np.sum(np.sqrt(theta))
+    print(str(datetime.datetime.now()) + "  TCD_eq =", TCD_eq)
+    TCF_eq = np.transpose(theta) @ p_eq
+    print(str(datetime.datetime.now()) + "  TCF_eq =", TCF_eq)
 
     #
     # SOCIAL OPTIMUM CASE 
     #
     # COMPUTE SOCIAL OPTIMUM
-    q_so = One - (np.linalg.inv(I - delta*np.transpose(Gm)) @ theta) # checked and correct
-    p_so = inv_mat @ (One - np.linalg.inv(I - delta*np.transpose(Gm)) @ theta )  # checked and correct
+    # q_so = One - (np.linalg.inv(I - delta*np.transpose(Gm)) @ theta) # checked and correct
+    # p_so = inv_mat @ (One - np.linalg.inv(I - delta*np.transpose(Gm)) @ theta )  # checked and correct
+    q_so = 1/np.sqrt(np.transpose(theta) @ inv_mat )
+    p_so = inv_mat @ (1.0/np.sqrt( np.transpose(theta) @ inv_mat ))
     print(str(datetime.datetime.now()) + " << FINISHED SOCIAL OPTIMUM COMPUTATION")
 
-    # COMPUTE WELFARE
-    W_so = theta @ (One - p_so) - 0.5*(One - q_so) @ (One - q_so)
-    print(str(datetime.datetime.now()) + "   W_so =", W_so)
+    # COMPUTE TOTAL COST
+    TCD_so = np.sum( np.sqrt( np.transpose(theta) @ inv_mat ) )
+    print(str(datetime.datetime.now()) + "  TCD_so =", TCD_so)
+    TCF_so = np.sum( np.sqrt( np.transpose(theta) @ inv_mat ) )
+    print(str(datetime.datetime.now()) + "  TCF_so =", TCF_so)
 
     #
     # WRITE OUT TEXT
     #
     out_file = open(output_filename, "w")
-    out_text = "i q_eq p_eq q_so p_so\n"
+    out_text = "i theta q_eq p_eq q_so p_so\n"
 
     for i in range(0,num_nodes):
-        out_text += str(i) + " " +str(q_eq[i]) + " " + str(p_eq[i]) + " " + str(q_so[i]) + " " + str(p_so[i]) + "\n"
+        out_text += str(i) + " " + str(theta[i]) + " " + str(q_eq[i]) + " " + str(p_eq[i]) + " " + str(q_so[i]) + " " + str(p_so[i]) + "\n"
+        # out_text += f"{q_eq[i]: .4f} {p_eq[i]: .4f} {q_so[i]: .4f} {p_so[i]: .4f}\n"
     
     # print(out_text)
     out_file.write(out_text)
     out_file.close()
     print("  >> FILE WRITTEN TO:" + output_filename)
 
+    if False:
+        print(out_text)
     print(">>>>>> FINISHED")
 # -------------------------------------------------------------------------
 

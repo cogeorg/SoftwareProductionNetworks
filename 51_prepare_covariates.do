@@ -485,18 +485,19 @@ merge 1:1 repo_name using ids_existing_repo.dta
 // 	egen dec_pop = cut(popularity), group(10)
 // 	order id_sample projectname size dec_pop 
 	
-	// VARIANT 2ƒ
+	// VARIANT 2
 	gen log_pop = log(1+popularity)
 	egen max_pop = max(log_pop)
 	gen rel_pop = log_pop / max_pop
-	
-		
-	gen log_size = log(size)
+
+	gen log_size = log(1 + size)  // the 1 + ensures that log(x) is never 0 which causes issues in q,p computations
 	egen max_size = max(log_size)
 	gen rel_size = log_size / max_size 
+	
+	
 	gen size_inv = 1.0/rel_size
 	
-	order id_sample projectname rel_pop rel_size 
+	order id_sample projectname rel_pop rel_size log_size size
 save 20_master_Cargo-matched-cut2.dta, replace
 outsheet using 20_master_Cargo-matched-cut2.csv, delimiter(";") replace 
 
@@ -510,8 +511,19 @@ insheet using equilibria_dependencies_Cargo-repo2-matched-lcc-cut2.csv, delimite
 // 	rename v3 q_so 
 // 	rename v4 p_so
 
-	gen d_p = (p_so - p_eq) / p_so
-	gen d_q = (q_so - q_eq) / q_eq 
+	gen d_p = (p_eq - p_so) / p_eq
+	gen d_q = (q_eq - q_so) / q_eq 
+	
+	scatter p_eq theta
+	graph export "scatter_p_eq-theta.png", as(png) name("Graph") replace
+	scatter p_so theta
+	graph export "scatter_p_so-theta.png", as(png) name("Graph") replace
+
+	reg p_eq theta
+	reg p_so theta
+
+	scatter d_p theta
+	reg d_p theta
 	
 // ============================================================================
 //
