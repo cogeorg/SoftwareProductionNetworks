@@ -54,15 +54,15 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
     covariate_data = np.genfromtxt(covariate_filename, delimiter=';', skip_header=1, dtype=float)
     theta = covariate_data[:,col_num] # normalized in stata
     # theta = (1.0/num_nodes)*np.ones(num_nodes)  # only for debugging purposes
-        
-    Gm = nx.to_numpy_array(G)
     
+    Gm = nx.to_numpy_array(G)
     I = np.eye(num_nodes)
     One = np.ones(num_nodes)
 
     inv_mat = np.linalg.inv(I - delta*Gm)
     inv_mat_trans = np.linalg.inv(I - delta*np.transpose(Gm))
 
+    print("bar")
     if False:
         print("Gm = \n", Gm)
         print("theta = ", theta)
