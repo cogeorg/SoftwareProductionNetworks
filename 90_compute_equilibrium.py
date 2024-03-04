@@ -22,7 +22,7 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
     edge_filename = base_directory + dependency_identifier + ".edgelist"
     covariate_filename = base_directory + covariate_identifier + ".csv"
 
-    output_filename = base_directory + "equilibria_" + dependency_identifier + ".csv"
+    output_filename = base_directory + "equilibria_" + dependency_identifier + "-" + str(delta) + "-" + str(col_num) + ".csv"
 
     print(str(datetime.datetime.now()) + " <<<< WORKING")
     print(str(datetime.datetime.now()) + "  DEPENDENCIES: " + edge_filename)
@@ -100,6 +100,12 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
     print(str(datetime.datetime.now()) + "  TCD_so =", TCD_so)
     TCF_so = np.sum( np.sqrt( np.transpose(theta) @ inv_mat ) )
     print(str(datetime.datetime.now()) + "  TCF_so =", TCF_so)
+
+    summary_output_filename = base_directory + "summary_" + dependency_identifier + "-" + str(delta) + "-" + str(col_num) + ".csv"
+    out_file = open(summary_output_filename, "w")
+    out_text = str(delta) + ";" + str(col_num) + ";" + str(TCD_eq) + ";" + str(TCF_eq) + ";" + str(TCD_so) + ";" + str(TCF_so) + "\n"
+    out_file.write(out_text)
+    out_file.close()
 
     #
     # WRITE OUT TEXT
