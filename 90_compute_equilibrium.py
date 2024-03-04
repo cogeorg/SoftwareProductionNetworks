@@ -60,8 +60,9 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
     One = np.ones(num_nodes)
     
     inv_mat = np.linalg.inv(I - delta*Gm)
-    print("foo")
+    print(str(datetime.datetime.now()) + "  COMPUTED inv_mat)
     inv_mat_trans = np.linalg.inv(I - delta*np.transpose(Gm))
+    print(str(datetime.datetime.now()) + "  COMPUTED inv_mat_trans)
 
     if False:
         print("Gm = \n", Gm)
