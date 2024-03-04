@@ -27,12 +27,30 @@ DEPFILE=dependencies_$BASENAME.csv
 # STEP 1 -- COMPUTE EQUILIBRIA
 #
 # ./90_compute_equilibrium.py $BASEDIR/$BASENAME/ test2 test2 0.1 4
-./90_compute_equilibrium.py $BASEDIR/$BASENAME/ dependencies_Cargo-repo2-matched-lcc-cut2 20_master_Cargo-matched-cut2 0.1 5
+# ./90_compute_equilibrium.py $BASEDIR/$BASENAME/ dependencies_Cargo-repo2-matched-lcc-cut2 20_master_Cargo-matched-cut2 0.1 5
 
 # for theta in 0.0001 0.001 0.005 0.01 0.05 0.1 0.15 0.2 
 # do
 #     ./90_compute_equilibrium.py $BASEDIR/$BASENAME/ dependencies_Cargo-repo2-matched-lcc-cut2 20_master_Cargo-matched-cut2 $theta 5
 # done
+
+#
+# OPTIONAL -- CREATE SAMPLE NETWORKS AND ANALYZE THEM TO UNDERSTAND MODEL
+#
+
+# for i in 32 64 128 256 512 1024
+#     do ./34_create_sample_networks.py $BASEDIR/$BASENAME/test/ test $i 0.0 0.0
+# done
+
+# NETWORKS: star_in star_out complete 
+for NETID in star_in star_out complete 
+    do for DISTID in log_normal equal 
+        do for i in 32 64 128 256 512 1024
+            do ./90_compute_equilibrium.py $BASEDIR/$BASENAME/test/ test-$NETID-$i test_theta-$DISTID-$i 0.05 1 ; cd $BASEDIR/$BASENAME/test/ ; cat summary_test-$NETID*.csv > summary_test-$NETID-$DISTID.csv ; mv summary_test-$NETID-$DISTID.csv ../ ; cd -
+        done
+    done
+done
+
 
 # ###########################################################################
 #

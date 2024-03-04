@@ -280,7 +280,7 @@ merge 1:1 delta theta num_nodes using summary_test-star_in-log_normal.dta
 	twoway ///
 		(line tcf_eq num_nodes, lcolor(black) lpattern(solid)) ///
 		(line tcf_so num_nodes, lcolor(black) lpattern(dash))
-	graph export star_in_log_normal_tcf.png, as(png) replace
+	graph export star_in_log_norma_tcf.png, as(png) replace
 	
 
 // ============================================================================

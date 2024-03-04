@@ -103,7 +103,7 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
 
     summary_output_filename = base_directory + "summary_" + dependency_identifier + "-" + str(delta) + "-" + str(col_num) + ".csv"
     out_file = open(summary_output_filename, "w")
-    out_text = str(delta) + ";" + str(col_num) + ";" + str(TCD_eq) + ";" + str(TCF_eq) + ";" + str(TCD_so) + ";" + str(TCF_so) + "\n"
+    out_text = str(delta) + ";" + str(col_num) + ";" + str(num_nodes) + ";" + str(TCD_eq) + ";" + str(TCF_eq) + ";" + str(TCD_so) + ";" + str(TCF_so) + "\n"
     out_file.write(out_text)
     out_file.close()
 
