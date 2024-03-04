@@ -30,7 +30,7 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
     
     # TO USE THE NETWORK STORED IN THE EDGE_FILENAME, USE THE BELOW:
     G = nx.read_edgelist(edge_filename, create_using=nx.DiGraph())
-
+    
     # OTHERWISE, USE UNTIL >>> TO MANUALLY ADD EDGES TO AN EMPTY GRAPH
     # <<<
     # G = nx.create_empty_copy(
@@ -58,11 +58,11 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
     Gm = nx.to_numpy_array(G)
     I = np.eye(num_nodes)
     One = np.ones(num_nodes)
-
+    
     inv_mat = np.linalg.inv(I - delta*Gm)
+    print("foo")
     inv_mat_trans = np.linalg.inv(I - delta*np.transpose(Gm))
 
-    print("bar")
     if False:
         print("Gm = \n", Gm)
         print("theta = ", theta)

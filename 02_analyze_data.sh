@@ -29,6 +29,10 @@ DEPFILE=dependencies_$BASENAME.csv
 # ./90_compute_equilibrium.py $BASEDIR/$BASENAME/ test2 test2 0.1 4
 ./90_compute_equilibrium.py $BASEDIR/$BASENAME/ dependencies_Cargo-repo2-matched-lcc-cut2 20_master_Cargo-matched-cut2 0.1 5
 
+# for theta in 0.0001 0.001 0.005 0.01 0.05 0.1 0.15 0.2 
+# do
+#     ./90_compute_equilibrium.py $BASEDIR/$BASENAME/ dependencies_Cargo-repo2-matched-lcc-cut2 20_master_Cargo-matched-cut2 $theta 5
+# done
 
 # ###########################################################################
 #
