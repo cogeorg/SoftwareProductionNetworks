@@ -53,6 +53,9 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
     # CREATE DATA
     covariate_data = np.genfromtxt(covariate_filename, delimiter=';', skip_header=1, dtype=float)
     theta = covariate_data[:,col_num] # normalized in stata
+    if True:
+        print(str(datetime.datetime.now()) + "    COVARIATE DIMENSIONS:",len(theta), " MIN:", min(theta), "MAX:", max(theta))
+        # print(theta)
     # theta = (1.0/num_nodes)*np.ones(num_nodes)  # only for debugging purposes
     
     Gm = nx.to_numpy_array(G)
@@ -60,10 +63,10 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
     One = np.ones(num_nodes)
     
     inv_mat = np.linalg.inv(I - delta*Gm)
-    print(str(datetime.datetime.now()) + "  COMPUTED inv_mat")
+    print(str(datetime.datetime.now()) + "  COMPUTED inv_mat WITH MIN:", np.min(inv_mat), "MAX:", np.max(inv_mat))
     inv_mat_trans = np.linalg.inv(I - delta*np.transpose(Gm))
-    print(str(datetime.datetime.now()) + "  COMPUTED inv_mat_trans")
-
+    print(str(datetime.datetime.now()) + "  COMPUTED inv_mat_trans WITH MIN:", np.min(inv_mat_trans), "MAX:", np.max(inv_mat_trans))
+    
     if False:
         print("Gm = \n", Gm)
         print("theta = ", theta)
@@ -107,14 +110,17 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
     out_file.write(out_text)
     out_file.close()
 
+    # COMPUTE SOCIAL VALUE OF REMOVING ALL BUGS FROM A PACKAGE
+    SVFB = np.transpose(theta) @ inv_mat
+
     #
     # WRITE OUT TEXT
     #
     out_file = open(output_filename, "w")
-    out_text = "i theta q_eq p_eq q_so p_so\n"
+    out_text = "i theta q_eq p_eq q_so p_so SVFB\n"
 
     for i in range(0,num_nodes):
-        out_text += str(i) + " " + str(theta[i]) + " " + str(q_eq[i]) + " " + str(p_eq[i]) + " " + str(q_so[i]) + " " + str(p_so[i]) + "\n"
+        out_text += str(i) + " " + str(theta[i]) + " " + str(q_eq[i]) + " " + str(p_eq[i]) + " " + str(q_so[i]) + " " + str(p_so[i]) + " " + str(SVFB[i]*q_eq[i]) + "\n"
         # out_text += f"{q_eq[i]: .4f} {p_eq[i]: .4f} {q_so[i]: .4f} {p_so[i]: .4f}\n"
     
     # print(out_text)

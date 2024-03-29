@@ -1,5 +1,96 @@
 // ============================================================================
 //
+// NPM -- 1.6.0
+//
+// ============================================================================
+cd ~/Dropbox/Papers/10_WorkInProgress/VulnerabilityContagion/Data/NPM-1.6.0Wyss/
+
+// prepare Wyss data
+insheet using Wyss_npm_data5.csv, names delimiter(";") clear
+save Wyss_npm_data5.dta, replace
+
+// prepare gephi data
+insheet using gephi_repo_dependencies_NPM-matchedWyss+newIDs.csv, clear nonames
+	drop v2 v3
+	rename v1 id_repo_new
+	rename v4 in_degree
+	rename v5 out_degree
+	drop v6
+	rename v7 ev_centrality
+	sort id_repo_new
+save gephi_repo_dependencies_NPM-matchedWyss+newIDs.dta, replace
+
+
+// load equilibria
+insheet using equilibria_repo_dependencies_NPM-matchedWyss+newIDs-0.005-5.csv, delimiter(" ") names clear
+	gen id_repo = i + 1 
+	drop i
+	order id_repo 
+	rename id_repo id_repo_new
+
+	gen log_svfb = log(svfb)
+	
+	gen d_p = (p_eq - p_so) / p_eq
+	gen d_q = (q_eq - q_so) / q_eq 
+
+merge 1:1 id_repo_new using Wyss_npm_data5.dta 
+	keep if _merge == 3
+	drop _merge
+merge 1:1 id_repo_new using gephi_repo_dependencies_NPM-matchedWyss+newIDs.dta
+	
+	scatter svfb d_p
+graph export "scatter_svfb_d_p.png", as(png) name("Graph") replace	
+
+
+
+
+// 	scatter p_eq theta
+// graph export "scatter_p_eq-theta.png", as(png) name("Graph") replace
+// 	scatter p_so theta
+// graph export "scatter_p_so-theta.png", as(png) name("Graph") replace
+//
+// 	reg p_eq theta
+// 	reg p_so theta
+
+	
+// insheet using summary_repo_dependencies_NPM-matchedWyss+newIDs-0.005-5.csv, delimiter(";") nonames clear
+// 	rename v1 delta
+// 	rename v2 colnum
+// 	rename v3 tcd_eq
+// 	rename v4 tcf_eq
+// 	rename v5 tcd_so
+// 	rename v6 tcf_so
+//	
+// 	set scheme s1mono
+// 	gen log_tcf_so = log(tcf_so)
+// 	gen log_tcf_eq = log(tcf_eq)
+//	
+// 	gen frac_tcf = tcf_eq / tcf_so
+// 	gen log_frac_tcf = log(frac_tcf)
+//	
+// twoway (line log_tcf_so delta, lcolor(black) lpattern(solid)) ///
+//        (line log_tcf_eq delta, lcolor(black) lpattern(dash)), ///
+//        legend(label(1 "log(tcf_so)") label(2 "log(tcf_eq)")) ///
+//        ylabel(, format(%10.0g)) ///
+//        title("Plot of log(tcf_so) and log(tcf_eq) vs. delta")	
+// graph export tcf_eqso_delta.png, as(png) replace
+//
+// twoway (line frac_tcf delta, lcolor(black) lpattern(solid)), ///
+//        legend(label(1 "tcf_eq/tcf_so")) ///
+//        ylabel(, format(%10.0g)) ///
+//        title("Plot of tcf_eq/tcf_so vs. delta")	
+// graph export fractcf_delta.png, as(png) replace
+
+
+
+
+
+
+	
+
+
+// ============================================================================
+//
 // Cargo -- 1.6.0
 //
 // ============================================================================
@@ -280,7 +371,7 @@ merge 1:1 delta theta num_nodes using summary_test-star_in-log_normal.dta
 	twoway ///
 		(line tcf_eq num_nodes, lcolor(black) lpattern(solid)) ///
 		(line tcf_so num_nodes, lcolor(black) lpattern(dash))
-	graph export star_in_log_norma_tcf.png, as(png) replace
+	graph export star_in_log_normal_tcf.png, as(png) replace
 	
 
 // ============================================================================
