@@ -1,40 +1,151 @@
 #!/usr/bin/env bash
+RUN_TYPE="$1"
+STEP="$2"
+
 BASEDIR=~/Dropbox/Papers/10_WorkInProgress/VulnerabilityContagion/Data/
 GITDIR=~/Git/SoftwareProductionNetworks/
+
+# ###########################################################################
+#
+# TEST RUN 1.6.0 -- NPM
+#
+# ###########################################################################
+if [ "$RUN_TYPE" == "TEST" ]; then
+    echo "<< WORKING ON: NPM *TEST* USING STEP: $STEP"
+
+    VERSION=1.6.0-2020-01-12
+    BASENAME=NPM-test
+    LANGUAGE=JavaScript
+    DEPFILE=dependencies_$BASENAME.csv
+    
+    REPOIDENTIFIER=repo_dependencies_NPM-test-matchedWyss+newIDs
+    COVARIDENTIFIER=Wyss_npm-test_data5
+
+
+    #
+    # STEP 0 -- COPY ORIGINAL DATA
+    #
+    if [ "$STEP" == "0" ]; then
+        mkdir $BASEDIR/$BASENAME/ 2>/dev/null
+        cp ~/Downloads/$BASENAME/$REPOIDENTIFIER.* $BASEDIR/$BASENAME/
+        cp ~/Downloads/$BASENAME/$COVARIDENTIFIER.csv $BASEDIR/$BASENAME/
+    fi
+
+    #
+    # STEP 1 -- ANALYZE GRAPH
+    #
+    if [ "$STEP" == "1" ]; then
+        ./80_analyze_graph.py $BASEDIR/$BASENAME/ $REPOIDENTIFIER True True False False 
+        ./80_analyze_graph-VC.py $BASEDIR/$BASENAME/ $REPOIDENTIFIER
+    fi
+
+    #
+    # STEP 2 -- COMPUTE  + ANALYZE EQUILIBRIA
+    #
+    if [ "$STEP" == "2" ]; then
+        mkdir $BASEDIR/$BASENAME/$REPOIDENTIFIER/ 2>/dev/null
+        ./90_compute_equilibrium.py $BASEDIR/$BASENAME/ $REPOIDENTIFIER $COVARIDENTIFIER 0.005 5 7
+        ./91_calibrate_equilibrium.py $BASEDIR/$BASENAME/ $REPOIDENTIFIER 0.005 5 7
+    fi
+
+    #
+    # STEP 3 -- COMPUTE FOR VARIOUS DELTA
+    #
+    SEQ_START=0.001
+    SEQ_INC=0.001
+    SEQ_END=0.05
+    if [ "$STEP" == "3" ]; then
+        rm $BASEDIR/$BASENAME/output_compute.log 2>/dev/null
+        rm $BASEDIR/$BASENAME/e_output_compute.log 2>/dev/null
+        for delta in `seq $SEQ_START $SEQ_INC $SEQ_END`
+        do
+            ./90_compute_equilibrium.py $BASEDIR/$BASENAME/ $REPOIDENTIFIER $COVARIDENTIFIER $delta 5 7 >> $BASEDIR/$BASENAME/output_compute.log 2>>$BASEDIR/$BASENAME/e_output_compute.log
+        done
+
+        rm $BASEDIR/$BASENAME/output_delta_calibration.csv 2>/dev/null
+        rm $BASEDIR/$BASENAME/e_output_delta_calibration.csv 2>/dev/null
+        for delta in `seq $SEQ_START $SEQ_INC $SEQ_END`
+        do
+            ./91_calibrate_equilibrium.py $BASEDIR/$BASENAME/$REPOIDENTIFIER/ equilibria_$delta-5 $delta 4 2 >> $BASEDIR/$BASENAME/output_delta_calibration.csv 2>>$BASEDIR/$BASENAME/e_output_delta_calibration.log
+        done
+    fi
+fi
+
 
 # ###########################################################################
 #
 # PRODUCTION RUN 1.6.0 -- NPM
 #
 # ###########################################################################
-VERSION=1.6.0-2020-01-12
-BASENAME=NPM-1.6.0Wyss
-LANGUAGE=JavaScript
-DEPFILE=dependencies_$BASENAME.csv
+if [ "$RUN_TYPE" == "PRODUCTION" ]; then
+    echo "<< WORKING ON: NPM *PRODUCTION* USING STEP: $STEP"
 
-#
-# STEP 0 -- COPY ORIGINAL DATA
-#
-# mkdir $BASEDIR/$BASENAME/ 2>/dev/null
-# cp -R ~/Downloads/NPM/Master/* $BASEDIR/$BASENAME/ 2>/dev/null
+    VERSION=1.6.0-2020-01-12
+    BASENAME=NPM-1.6.0Wyss
+    LANGUAGE=JavaScript
+    DEPFILE=dependencies_$BASENAME.csv
 
-#
-# OPTIONAL -- CREATE SMALLER SAMPLE FROM ORIGINAL DATA
-#
-# ./33_sample_network.py $BASEDIR/$BASENAME/ dependencies_Cargo-repo2-matched-lcc.csv dependencies_Cargo-repo2-matched-lcc 0.01
+    REPOIDENTIFIER=repo_dependencies_NPM-matchedWyss+newIDs
+    COVARIDENTIFIER=Wyss_npm_data6
 
-#
-# STEP 1 -- COMPUTE  + ANALYZE EQUILIBRIA
-#
-./90_compute_equilibrium.py $BASEDIR/$BASENAME/ repo_dependencies_NPM-matchedWyss+newIDs Wyss_npm_data5 0.005 5
+    #
+    # STEP 0 -- COPY ORIGINAL DATA
+    #
+    if [ "$STEP" == "0" ]; then
+        mkdir $BASEDIR/$BASENAME/ 2>/dev/null
+        cp -R ~/Downloads/NPM/Master/* $BASEDIR/$BASENAME/ 2>/dev/null
+    fi
 
-# for theta in 0.0001 0.001 0.005
-# do
-#     ./90_compute_equilibrium.py $BASEDIR/$BASENAME/ dependencies_Cargo-repo2-matched-lcc-cut2 20_master_Cargo-matched-cut2 $theta 5
-# done
+    #
+    # OPTIONAL -- CREATE SMALLER SAMPLE FROM ORIGINAL DATA
+    #
+    if [ "$STEP" == "OPT1" ]; then
+        ./33_sample_network.py $BASEDIR/$BASENAME/ dependencies_Cargo-repo2-matched-lcc.csv dependencies_Cargo-repo2-matched-lcc 0.01
+    fi
 
+    #
+    # STEP 1 -- ANALYZE GRAPH
+    #
+    if [ "$STEP" == "1" ]; then
+        ./80_analyze_graph.py $BASEDIR/$BASENAME/ $REPOIDENTIFIER True True False False 
+        ./80_analyze_graph-VC.py $BASEDIR/$BASENAME/ $REPOIDENTIFIER
+    fi
 
+    #
+    # STEP 2 -- COMPUTE EQUILIBRIA
+    #
+    if [ "$STEP" == "2" ]; then
+        ./90_compute_equilibrium.py $BASEDIR/$BASENAME/ $REPOIDENTIFIER $COVARIDENTIFIER 0.005 5
+        ./91_calibrate_equilibrium.py $BASEDIR/$BASENAME/ $REPOIDENTIFIER $COVARIDENTIFIER 0.005 5
+    fi
 
+    #
+    # STEP 3 -- COMPUTE EQUILIBRIA FOR VARIOUS DELTA
+    #
+    SEQ_START=0.001
+    SEQ_INC=0.001
+    SEQ_END=0.05
+    if [ "$STEP" == "3" ]; then
+        rm $BASEDIR/$BASENAME/output_compute.log 2>/dev/null
+        rm $BASEDIR/$BASENAME/e_output_compute.log 2>/dev/null
+        for delta in `seq $SEQ_START $SEQ_INC $SEQ_END`
+        do
+            ./90_compute_equilibrium.py $BASEDIR/$BASENAME/ $REPOIDENTIFIER $COVARIDENTIFIER $delta 5 9 >> $BASEDIR/$BASENAME/output_compute.log 2>>$BASEDIR/$BASENAME/e_output_compute.log
+        done
+    fi
+
+    #
+    # STEP 4 -- ANALYZE EQUILIBRIA FOR VARIOUS DELTA
+    #
+    if [ "$STEP" == "4" ]; then
+        rm $BASEDIR/$BASENAME/output_delta_calibration.csv 2>/dev/null
+        rm $BASEDIR/$BASENAME/e_output_delta_calibration.csv 2>/dev/null
+        for delta in `seq $SEQ_START $SEQ_INC $SEQ_END`
+        do
+            ./91_calibrate_equilibrium.py $BASEDIR/$BASENAME/$REPOIDENTIFIER/ equilibria_$delta-5 $delta 4 2 >> $BASEDIR/$BASENAME/output_delta_calibration.csv 2>>$BASEDIR/$BASENAME/e_output_delta_calibration.log
+        done
+    fi
+fi
 
 # ###########################################################################
 #

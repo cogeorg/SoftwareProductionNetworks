@@ -18,11 +18,11 @@ import networkx as nx
 # -------------------------------------------------------------------------
 # do_run(file_name)
 # -------------------------------------------------------------------------
-def do_run(base_directory, dependency_identifier, covariate_identifier, delta, col_num):
+def do_run(base_directory, dependency_identifier, covariate_identifier, delta, col_num, pobs_num):
     edge_filename = base_directory + dependency_identifier + ".edgelist"
     covariate_filename = base_directory + covariate_identifier + ".csv"
 
-    output_filename = base_directory + "equilibria_" + dependency_identifier + "-" + str(delta) + "-" + str(col_num) + ".csv"
+    output_filename = base_directory + dependency_identifier + "/" + "equilibria_" + str(delta) + "-" + str(col_num) + ".csv"
 
     print(str(datetime.datetime.now()) + " <<<< WORKING")
     print(str(datetime.datetime.now()) + "  DEPENDENCIES: " + edge_filename)
@@ -53,10 +53,10 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
     # CREATE DATA
     covariate_data = np.genfromtxt(covariate_filename, delimiter=';', skip_header=1, dtype=float)
     theta = covariate_data[:,col_num] # normalized in stata
+    pobs = covariate_data[:,pobs_num]
     if True:
-        print(str(datetime.datetime.now()) + "    COVARIATE DIMENSIONS:",len(theta), " MIN:", min(theta), "MAX:", max(theta))
-        # print(theta)
-    # theta = (1.0/num_nodes)*np.ones(num_nodes)  # only for debugging purposes
+        print(str(datetime.datetime.now()) + "    THETA DIMENSIONS:",len(theta), " MIN:", min(theta), "MAX:", max(theta))
+        print(str(datetime.datetime.now()) + "    POBS DIMENSIONS:",len(pobs), " MIN:", min(pobs), "MAX:", max(pobs))
     
     Gm = nx.to_numpy_array(G)
     I = np.eye(num_nodes)
@@ -76,8 +76,6 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
     # EQUILIBRIUM CASE
     #
     # COMPUTE EQUILIBRIUM
-    # q_eq = One - theta  # checked and correct
-    # p_eq = inv_mat @ q_eq  # checked and correct
     q_eq = One / np.sqrt(theta)
     p_eq = inv_mat @ q_eq
     print(str(datetime.datetime.now()) + " << FINISHED EQUILIBRIUM COMPUTATION")
@@ -92,8 +90,6 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
     # SOCIAL OPTIMUM CASE 
     #
     # COMPUTE SOCIAL OPTIMUM
-    # q_so = One - (np.linalg.inv(I - delta*np.transpose(Gm)) @ theta) # checked and correct
-    # p_so = inv_mat @ (One - np.linalg.inv(I - delta*np.transpose(Gm)) @ theta )  # checked and correct
     q_so = 1/np.sqrt(np.transpose(theta) @ inv_mat )
     p_so = inv_mat @ (1.0/np.sqrt( np.transpose(theta) @ inv_mat ))
     print(str(datetime.datetime.now()) + " << FINISHED SOCIAL OPTIMUM COMPUTATION")
@@ -104,7 +100,7 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
     TCF_so = np.sum( np.sqrt( np.transpose(theta) @ inv_mat ) )
     print(str(datetime.datetime.now()) + "  TCF_so =", TCF_so)
 
-    summary_output_filename = base_directory + "summary_" + dependency_identifier + "-" + str(delta) + "-" + str(col_num) + ".csv"
+    summary_output_filename = base_directory + dependency_identifier + "/"  + "summary_" + str(delta) + "-" + str(col_num) + ".csv"
     out_file = open(summary_output_filename, "w")
     out_text = str(delta) + ";" + str(col_num) + ";" + str(num_nodes) + ";" + str(TCD_eq) + ";" + str(TCF_eq) + ";" + str(TCD_so) + ";" + str(TCF_so) + "\n"
     out_file.write(out_text)
@@ -117,19 +113,15 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
     # WRITE OUT TEXT
     #
     out_file = open(output_filename, "w")
-    out_text = "i theta q_eq p_eq q_so p_so SVFB\n"
+    out_text = "i theta pobs q_eq p_eq q_so p_so SVFB\n"
 
     for i in range(0,num_nodes):
-        out_text += str(i) + " " + str(theta[i]) + " " + str(q_eq[i]) + " " + str(p_eq[i]) + " " + str(q_so[i]) + " " + str(p_so[i]) + " " + str(SVFB[i]*q_eq[i]) + "\n"
-        # out_text += f"{q_eq[i]: .4f} {p_eq[i]: .4f} {q_so[i]: .4f} {p_so[i]: .4f}\n"
+        out_text += str(i) + " " + str(theta[i]) + " " + str(pobs[i]) + " " + str(q_eq[i]) + " " + str(p_eq[i]) + " " + str(q_so[i]) + " " + str(p_so[i]) + " " + str(SVFB[i]*q_eq[i]) + "\n"
     
-    # print(out_text)
     out_file.write(out_text)
     out_file.close()
     print("  >> FILE WRITTEN TO:" + output_filename)
 
-    if False:
-        print(out_text)
     print(">>>>>> FINISHED")
 # -------------------------------------------------------------------------
 
@@ -144,13 +136,15 @@ if __name__ == '__main__':
 # VARIABLES
 #
     args = sys.argv
+    print(args)
     base_directory = args[1]
     dependency_identifier = args[2]
     covariate_identifier = args[3]
     delta = float(args[4])
     col_num = int(args[5])
-    
+    pobs_num = int(args[6])
+
 #
 # CODE
 #
-    do_run(base_directory, dependency_identifier, covariate_identifier, delta, col_num)
+    do_run(base_directory, dependency_identifier, covariate_identifier, delta, col_num, pobs_num)

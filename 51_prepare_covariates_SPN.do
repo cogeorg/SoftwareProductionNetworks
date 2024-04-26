@@ -7,7 +7,12 @@ cd ~/Dropbox/Papers/10_WorkInProgress/VulnerabilityContagion/Data/NPM-1.6.0Wyss/
 
 // prepare Wyss data
 insheet using Wyss_npm_data5.csv, names delimiter(";") clear
+	egen foo = max(size)
+	gen rel_size = size / foo
+	drop foo
+	order id_repo id_repo_new repo repo_user repository downloads vulnerabilities issues_per_download size rel_size
 save Wyss_npm_data5.dta, replace
+outsheet using Wyss_npm_data6.csv, names delimiter(";") replace
 
 // prepare gephi data
 insheet using gephi_repo_dependencies_NPM-matchedWyss+newIDs.csv, clear nonames
@@ -39,9 +44,24 @@ merge 1:1 id_repo_new using Wyss_npm_data5.dta
 merge 1:1 id_repo_new using gephi_repo_dependencies_NPM-matchedWyss+newIDs.dta
 	keep if _merge == 3
 	drop _merge
-	
+save "Master.dta", replace
+
+
+use "Master.dta", clear
 	scatter svfb d_p
 graph export "scatter_svfb_d_p.png", as(png) name("Graph") replace	
+
+
+
+insheet using "output_delta_calibration.csv", delimiter(" ") clear
+	rename v1 delta
+	rename v2 dist
+
+	twoway (line dist delta, lcolor(black) lpattern(solid))
+graph export dist_delta.png, as(png) replace
+
+
+
 
 
 
