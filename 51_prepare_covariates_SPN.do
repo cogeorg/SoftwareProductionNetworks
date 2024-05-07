@@ -61,8 +61,11 @@ insheet using "output_delta_calibration.csv", delimiter(" ") clear
 graph export dist_delta.png, as(png) replace
 
 
-
-
+// load single equilibrium file
+insheet using repo_dependencies_NPM-matchedWyss+newIDs/equilibria_0.004-5.csv, delimiter(" ") names clear
+	hist theta
+	hist pobs
+	hist p_eq
 
 
 

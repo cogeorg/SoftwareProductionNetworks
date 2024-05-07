@@ -86,7 +86,7 @@ if [ "$RUN_TYPE" == "PRODUCTION" ]; then
     DEPFILE=dependencies_$BASENAME.csv
 
     REPOIDENTIFIER=repo_dependencies_NPM-matchedWyss+newIDs
-    COVARIDENTIFIER=Wyss_npm_data6
+    COVARIDENTIFIER=Wyss_npm_data5
 
     #
     # STEP 0 -- COPY ORIGINAL DATA
@@ -115,8 +115,9 @@ if [ "$RUN_TYPE" == "PRODUCTION" ]; then
     # STEP 2 -- COMPUTE EQUILIBRIA
     #
     if [ "$STEP" == "2" ]; then
-        ./90_compute_equilibrium.py $BASEDIR/$BASENAME/ $REPOIDENTIFIER $COVARIDENTIFIER 0.005 5
-        ./91_calibrate_equilibrium.py $BASEDIR/$BASENAME/ $REPOIDENTIFIER $COVARIDENTIFIER 0.005 5
+        delta=0.004
+        ./90_compute_equilibrium.py $BASEDIR/$BASENAME/ $REPOIDENTIFIER $COVARIDENTIFIER $delta 5 19
+        ./91_calibrate_equilibrium.py $BASEDIR/$BASENAME/$REPOIDENTIFIER/ equilibria_$delta-5 $delta 4 2
     fi
 
     #

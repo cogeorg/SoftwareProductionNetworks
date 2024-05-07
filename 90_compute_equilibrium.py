@@ -28,19 +28,8 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
     print(str(datetime.datetime.now()) + "  DEPENDENCIES: " + edge_filename)
     print(str(datetime.datetime.now()) + "  COVARIATES: " + covariate_filename)
     
-    # TO USE THE NETWORK STORED IN THE EDGE_FILENAME, USE THE BELOW:
+    # USE NETWORK STORED IN THE EDGE_FILENAME
     G = nx.read_edgelist(edge_filename, create_using=nx.DiGraph())
-    
-    # OTHERWISE, USE UNTIL >>> TO MANUALLY ADD EDGES TO AN EMPTY GRAPH
-    # <<<
-    # G = nx.create_empty_copy(
-    #     nx.read_edgelist(edge_filename, create_using=nx.DiGraph())                     
-    #                          )
-    # print(G.nodes())
-    # G.add_edges_from([('0','1')])
-    # G.add_edges_from([('1','2')])
-    # G.add_edges_from([('0','2')])
-    # >>>
 
     # nodes, edges
     num_nodes = G.number_of_nodes()
@@ -63,6 +52,10 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
     One = np.ones(num_nodes)
     
     inv_mat = np.linalg.inv(I - delta*Gm)
+    eigenvalues = np.linalg.eigvals(Gm)
+    if True:
+        print(str(datetime.datetime.now()) + "  COMPUTED EIGENVALUES WITH MIN:", np.min(np.abs(eigenvalues)), "MAX:", np.max(np.abs(eigenvalues)))
+        # print(eigenvalues)
     print(str(datetime.datetime.now()) + "  COMPUTED inv_mat WITH MIN:", np.min(inv_mat), "MAX:", np.max(inv_mat))
     inv_mat_trans = np.linalg.inv(I - delta*np.transpose(Gm))
     print(str(datetime.datetime.now()) + "  COMPUTED inv_mat_trans WITH MIN:", np.min(inv_mat_trans), "MAX:", np.max(inv_mat_trans))
@@ -78,6 +71,7 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
     # COMPUTE EQUILIBRIUM
     q_eq = One / np.sqrt(theta)
     p_eq = inv_mat @ q_eq
+    print(np.min(p_eq), np.max(p_eq))
     print(str(datetime.datetime.now()) + " << FINISHED EQUILIBRIUM COMPUTATION")
 
     # COMPUTE TOTAL COST
@@ -136,7 +130,6 @@ if __name__ == '__main__':
 # VARIABLES
 #
     args = sys.argv
-    print(args)
     base_directory = args[1]
     dependency_identifier = args[2]
     covariate_identifier = args[3]
