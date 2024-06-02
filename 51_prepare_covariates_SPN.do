@@ -7,10 +7,20 @@ cd ~/Dropbox/Papers/10_WorkInProgress/VulnerabilityContagion/Data/NPM-1.6.0Wyss/
 
 // prepare Wyss data
 insheet using Wyss_npm_data5.csv, names delimiter(";") clear
+	egen foo = max(downloads)
+	gen rel_down = downloads / foo
+	drop foo
+	
 	egen foo = max(size)
 	gen rel_size = size / foo
 	drop foo
-	order id_repo id_repo_new repo repo_user repository downloads vulnerabilities issues_per_download size rel_size
+
+	egen foo = max(versions)
+	gen rel_versions = versions / foo
+	drop foo
+	
+	order id_repo id_repo_new repo repo_user repository rel_down vulnerabilities issues_per_download size rel_size versions rel_versions
+
 save Wyss_npm_data5.dta, replace
 outsheet using Wyss_npm_data6.csv, names delimiter(";") replace
 
@@ -57,7 +67,17 @@ insheet using "output_delta_calibration.csv", delimiter(" ") clear
 	rename v1 delta
 	rename v2 dist
 
-	twoway (line dist delta, lcolor(black) lpattern(solid))
+// 	twoway (line dist delta, lcolor(black) lpattern(solid)), yrange(2 2.2)
+//	
+// 	twoway (line dist delta, lcolor(black) lpattern(solid)) ///
+//        (scatteri 2.044944 0.0036, mlabel("Minimum") mlabposition(6) mcolor(red) msymbol(Oh)) ///
+//        , yscale(range(2 2.2)) ylabel(2(0.05)2.2, nogrid)
+
+twoway (line dist delta, lcolor(black) lpattern(solid)) ///
+       (scatteri 2.044944 0.0036, mlabposition(6) mcolor(red) msymbol(Oh)) ///
+       (function y=2.044944, range(0 0.005) lpattern(dash) lcolor(blue) lwidth(thin)) ///
+       , yscale(range(2 2.2)) ylabel(2(0.05)2.2) xline(0.0036, lpattern(dash) lcolor(blue) lwidth(thin)) legend(off)
+
 graph export dist_delta.png, as(png) replace
 
 

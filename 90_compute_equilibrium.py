@@ -30,6 +30,7 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
     
     # USE NETWORK STORED IN THE EDGE_FILENAME
     G = nx.read_edgelist(edge_filename, create_using=nx.DiGraph())
+    # G = H.reverse()
 
     # nodes, edges
     num_nodes = G.number_of_nodes()
@@ -41,8 +42,12 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
 
     # CREATE DATA
     covariate_data = np.genfromtxt(covariate_filename, delimiter=';', skip_header=1, dtype=float)
-    theta = covariate_data[:,col_num] # normalized in stata
-    pobs = covariate_data[:,pobs_num]
+    n = covariate_data.shape[0]  # number of rows
+    # theta = covariate_data[:,col_num] # normalized in stata
+    theta = np.random.rand(n,1).flatten()
+    # pobs = covariate_data[:,pobs_num]
+    pobs = np.random.rand(n,1).flatten()
+
     if True:
         print(str(datetime.datetime.now()) + "    THETA DIMENSIONS:",len(theta), " MIN:", min(theta), "MAX:", max(theta))
         print(str(datetime.datetime.now()) + "    POBS DIMENSIONS:",len(pobs), " MIN:", min(pobs), "MAX:", max(pobs))
@@ -71,7 +76,7 @@ def do_run(base_directory, dependency_identifier, covariate_identifier, delta, c
     # COMPUTE EQUILIBRIUM
     q_eq = One / np.sqrt(theta)
     p_eq = inv_mat @ q_eq
-    print(np.min(p_eq), np.max(p_eq))
+    # print(np.min(p_eq), np.max(p_eq))
     print(str(datetime.datetime.now()) + " << FINISHED EQUILIBRIUM COMPUTATION")
 
     # COMPUTE TOTAL COST

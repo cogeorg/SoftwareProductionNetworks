@@ -86,7 +86,7 @@ if [ "$RUN_TYPE" == "PRODUCTION" ]; then
     DEPFILE=dependencies_$BASENAME.csv
 
     REPOIDENTIFIER=repo_dependencies_NPM-matchedWyss+newIDs
-    COVARIDENTIFIER=Wyss_npm_data5
+    COVARIDENTIFIER=Wyss_npm_data6
 
     #
     # STEP 0 -- COPY ORIGINAL DATA
@@ -116,23 +116,26 @@ if [ "$RUN_TYPE" == "PRODUCTION" ]; then
     #
     if [ "$STEP" == "2" ]; then
         delta=0.004
-        ./90_compute_equilibrium.py $BASEDIR/$BASENAME/ $REPOIDENTIFIER $COVARIDENTIFIER $delta 5 19
+        ./90_compute_equilibrium.py $BASEDIR/$BASENAME/ $REPOIDENTIFIER $COVARIDENTIFIER $delta 5 11
         ./91_calibrate_equilibrium.py $BASEDIR/$BASENAME/$REPOIDENTIFIER/ equilibria_$delta-5 $delta 4 2
     fi
 
     #
     # STEP 3 -- COMPUTE EQUILIBRIA FOR VARIOUS DELTA
     #
-    SEQ_START=0.001
-    SEQ_INC=0.001
-    SEQ_END=0.05
+    SEQ_START=0.0001
+    SEQ_INC=0.0002
+    SEQ_END=0.006
     if [ "$STEP" == "3" ]; then
+        date
         rm $BASEDIR/$BASENAME/output_compute.log 2>/dev/null
         rm $BASEDIR/$BASENAME/e_output_compute.log 2>/dev/null
         for delta in `seq $SEQ_START $SEQ_INC $SEQ_END`
         do
-            ./90_compute_equilibrium.py $BASEDIR/$BASENAME/ $REPOIDENTIFIER $COVARIDENTIFIER $delta 5 9 >> $BASEDIR/$BASENAME/output_compute.log 2>>$BASEDIR/$BASENAME/e_output_compute.log
+            echo $delta
+            ./90_compute_equilibrium.py $BASEDIR/$BASENAME/ $REPOIDENTIFIER $COVARIDENTIFIER $delta 5 11 >> $BASEDIR/$BASENAME/output_compute.log 2>>$BASEDIR/$BASENAME/e_output_compute.log
         done
+        date
     fi
 
     #
