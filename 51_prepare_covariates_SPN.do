@@ -1,5 +1,155 @@
 // ============================================================================
 //
+// NPM -- 1.6.0 -- WYSS
+//
+// ============================================================================
+cd ~/Dropbox/Papers/10_WorkInProgress/SoftwareNetworks/Data/NPM
+// cd ~/Downloads/NPM/ 
+// cd ~/Dropbox/Papers/10_WorkInProgress/VulnerabilityContagion/Data/NPM/
+
+//
+// PREPARE FILES
+//
+
+// projects
+insheet using "projects_NPM.csv", delimiter(";") names clear
+	drop if id == "ID"
+	destring id, replace
+	destring repoid, replace
+save "projects_NPM.dta", replace
+	rename id projectid
+	keep projectid repoid	
+// 	drop if repoid == ""
+save projectid_repoid.dta, replace 
+
+// PREPARE WYSS DATA
+insheet using "Wyss_npm_data.csv", delimiter(",") clear
+	rename package projectname 
+	sort projectname
+	
+	// create repo-based variables
+	split repository, parse("https://github.com/")
+	drop repository1
+	split repository2, parse("/")
+	drop repository2
+	
+	rename repository22 repo
+	rename repository21 repo_user 
+	
+	order repo repo_user repository 
+	drop projectname
+save "Wyss_npm_data.dta", replace
+
+use Wyss_npm_data.dta, clear
+	sort repo	
+	rename weekly_downloads downloads
+	order repo repo_user repository downloads vulnerabilities issues_per_download size versions commits contributors open_issues closed_issues commits_with_bug commits_with_vuln mean_loc-halstead stars watchers forks issues
+	keep repo repo_user repository  downloads vulnerabilities issues_per_download size versions commits contributors open_issues closed_issues commits_with_bug commits_with_vuln mean_loc-halstead stars watchers forks issues
+	
+	foreach var of varlist downloads-issues {
+			bysort repo: egen foo = mean(`var')
+			drop `var'
+			rename foo `var'
+	}
+	bysort repo: gen num_packages = _N 
+	duplicates drop
+	
+	bysort repo: gen foo = _N  // forking repos means that some packages have multiple repositories which might or might not be distinct
+	drop if foo > 1  // drop those
+	drop foo
+	
+	gen id_repo = _n	
+save Wyss_npm_data2.dta, replace
+outsheet using Wyss_npm_data2.csv, delimiter(";") names replace
+
+use Wyss_npm_data2.dta, clear
+	keep repo id_repo
+save repo_id_repo-Wyss.dta, replace
+
+
+// ANALYSIS BASED ON REPO DEPENDENCIES 
+insheet using repo_dependencies_NPM-matchedWyss.csv, names delimiter(";") clear
+
+	rename from_repo repo 
+merge m:1 repo using repo_id_repo-Wyss.dta  // using the Wyss unique IDs 
+	drop if _merge != 3
+	drop _merge 
+	rename repo from_repo
+	rename id_repo id_from_repo 
+
+	rename to_repo repo 
+merge m:1 repo using repo_id_repo-Wyss.dta
+	drop if _merge != 3
+	drop _merge 
+	rename repo to_repo
+	rename id_repo id_to_repo 
+
+	duplicates drop 
+	
+	sort id_from_repo id_to_repo  // based on Wyss unique IDs	
+	keep id_from_repo id_to_repo
+
+outsheet using repo_dependencies_NPM-matchedWyss+IDs.csv, nonames delimiter(";") replace
+
+
+// check which repos exist in the final dependencies file...
+insheet using repo_dependencies_NPM-matchedWyss+IDs.csv, nonames delimiter(";") clear
+	rename v1 id_repo 
+	drop v2 
+	duplicates drop 
+save tmp.dta, replace
+
+insheet using repo_dependencies_NPM-matchedWyss+IDs.csv, nonames delimiter(";") clear
+	rename v2 id_repo 
+	drop v1
+	duplicates drop
+append using tmp.dta 
+	duplicates drop
+save id_repos_dependencies.dta, replace
+
+
+// ...then make sure that all of those exist in Wyss data
+insheet using Wyss_npm_data2.csv, names delimiter(";") clear
+	merge 1:1 id_repo using id_repos_dependencies.dta
+	keep if _merge == 3
+	drop _merge
+outsheet using Wyss_npm_data3.csv, names delimiter(";") replace
+
+
+
+// lastly, re-generate ids so that Wyss data has consecutive numbering
+insheet using Wyss_npm_data3.csv, names delimiter(";") clear
+	sort repo
+	gen id_repo_new = _n 
+	order id_repo id_repo_new repo
+outsheet using Wyss_npm_data5.csv, names delimiter(";") replace
+outsheet using Master/Wyss_npm_data5.csv, names delimiter(";") replace
+	keep id_repo id_repo_new 
+save id_repo_new.dta, replace
+
+insheet using repo_dependencies_NPM-matchedWyss+IDs.csv, nonames delimiter(";") clear
+	rename v1 id_repo 
+merge m:1 id_repo using id_repo_new.dta 
+	drop if _merge == 2
+	drop _merge 
+	rename id_repo_new id_repo_from 
+	drop id_repo
+	
+	rename v2 id_repo 
+merge m:1 id_repo using id_repo_new.dta 
+	drop if _merge == 2
+	drop _merge 
+	rename id_repo_new id_repo_to 
+	drop id_repo
+	
+	sort id_repo_from id_repo_to
+outsheet using repo_dependencies_NPM-matchedWyss+newIDs.csv, nonames delimiter(";") replace
+// this is the file the network file is created with using 30_create_dependency_graph-1.6.0.py
+// it does not contain bad identifiers and uses new consecutive IDs
+
+
+// ============================================================================
+//
 // NPM -- 1.6.0
 //
 // ============================================================================
@@ -7,10 +157,6 @@ cd ~/Dropbox/Papers/10_WorkInProgress/VulnerabilityContagion/Data/NPM-1.6.0Wyss/
 
 // prepare Wyss data
 insheet using Wyss_npm_data5.csv, names delimiter(";") clear
-	egen foo = max(downloads)
-	gen rel_down = downloads / foo
-	drop foo
-	
 	egen foo = max(size)
 	gen rel_size = size / foo
 	drop foo
@@ -19,7 +165,7 @@ insheet using Wyss_npm_data5.csv, names delimiter(";") clear
 	gen rel_versions = versions / foo
 	drop foo
 	
-	order id_repo id_repo_new repo repo_user repository rel_down vulnerabilities issues_per_download size rel_size versions rel_versions
+	order id_repo id_repo_new repo repo_user repository downloads vulnerabilities issues_per_download size rel_size versions rel_versions
 
 save Wyss_npm_data5.dta, replace
 outsheet using Wyss_npm_data6.csv, names delimiter(";") replace
@@ -36,6 +182,46 @@ insheet using gephi_repo_dependencies_NPM-matchedWyss+newIDs.csv, clear nonames
 save gephi_repo_dependencies_NPM-matchedWyss+newIDs.dta, replace
 
 
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<
+// INTERLUDE 2022-07-23
+insheet using Wyss_npm_data5.csv, names delimiter(";") clear
+	keep id_repo id_repo_new versions
+	rename versions num_updates
+save Wyss_npm_data5-num_updates.dta, replace
+
+insheet using repo_dependencies_NPM-matchedWyss+newIDs.csv, nonames delimiter(";") clear
+	rename v1 new_id_from 
+	rename v2 new_id_to
+		
+	bysort new_id_to: gen num_dependents = _N
+	bysort new_id_from: gen num_dependencies = _N
+
+	rename new_id_to id_repo_new
+merge m:1 id_repo_new using Wyss_npm_data5-num_updates.dta
+	drop if _merge != 3
+	drop _merge 
+	rename num_updates num_updates_to
+	rename id_repo_new new_id_to 
+	
+	rename new_id_from id_repo_new
+merge m:1 id_repo_new using Wyss_npm_data5-num_updates.dta
+	drop if _merge != 3
+	drop _merge 
+	rename num_updates num_updates_from
+	rename id_repo_new new_id_from 
+
+	// now create avg_to_updates per new_id_from 
+	bysort new_id_from: egen avg_to_updates = mean(num_updates_to)
+	
+	keep new_id_from num_updates_from avg_to_updates
+	duplicates drop
+	
+	scatter num_updates_from avg_to_updates 
+	correl num_updates_from avg_to_updates
+	
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>
+	
+	
 // load equilibria
 insheet using equilibria_repo_dependencies_NPM-matchedWyss+newIDs-0.005-5.csv, delimiter(" ") names clear
 	gen id_repo = i + 1 
@@ -67,7 +253,9 @@ insheet using "output_delta_calibration.csv", delimiter(" ") clear
 	rename v1 delta
 	rename v2 dist
 
-// 	twoway (line dist delta, lcolor(black) lpattern(solid)), yrange(2 2.2)
+	twoway (line dist delta, lcolor(black) lpattern(solid))
+graph export dist_delta.png, as(png) replace
+	
 //	
 // 	twoway (line dist delta, lcolor(black) lpattern(solid)) ///
 //        (scatteri 2.044944 0.0036, mlabel("Minimum") mlabposition(6) mcolor(red) msymbol(Oh)) ///
@@ -78,7 +266,7 @@ twoway (line dist delta, lcolor(black) lpattern(solid)) ///
        (function y=2.044944, range(0 0.005) lpattern(dash) lcolor(blue) lwidth(thin)) ///
        , yscale(range(2 2.2)) ylabel(2(0.05)2.2) xline(0.0036, lpattern(dash) lcolor(blue) lwidth(thin)) legend(off)
 
-graph export dist_delta.png, as(png) replace
+
 
 
 // load single equilibrium file
